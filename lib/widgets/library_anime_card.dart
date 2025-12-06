@@ -6,6 +6,7 @@ import 'package:metia/data/user/profile.dart';
 
 import 'package:metia/data/user/user_library.dart';
 import 'package:metia/models/login_provider.dart';
+import 'package:metia/screens/anime_page.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:provider/provider.dart';
 
@@ -133,7 +134,13 @@ class _AnimeCardState extends State<AnimeCard> {
                     builder: (context, animation) {
                       return GestureDetector(
                         onTap: () {
-                          debugPrint("tapped on lamo");
+                          Navigator.of(context).push(
+                            CustomPageRoute(
+                              builder: (context) => AnimePage(
+                                anime: widget.anime,
+                              ),
+                            ),
+                          );
                         },
                         child: SizedBox(
                           height: 183,

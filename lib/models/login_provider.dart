@@ -74,7 +74,6 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> _initializeLoginState() async {
     String authKey = await _getAuthKey();
-
     _isLoggedIn = authKey != "empty";
 
     if (_isLoggedIn) {

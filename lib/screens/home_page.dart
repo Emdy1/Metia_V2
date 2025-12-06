@@ -281,6 +281,7 @@ _switchMenuButtons(value, context) {
         context,
         listen: false,
       ).isDarkMode;
+
       if (isDarkMode) {
         Provider.of<ThemeProvider>(context, listen: false).setLightMode();
       } else {
