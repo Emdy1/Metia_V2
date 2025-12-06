@@ -228,7 +228,7 @@ jobs:
 
       - name: Download Latest IPA from Release
         run: |
-          curl -L -o metia.ipa "https://github.com/moaadhzair/Metia_V2/releases/download/v${{ env.version }}/metia.signed.ipa"
+          curl -L -o metia.ipa "https://github.com/emdy1/Metia_V2/releases/download/v${{ env.version }}/metia.signed.ipa"
 
       - name: Get IPA File Size
         id: get_size
@@ -245,7 +245,7 @@ jobs:
 
           const newDate = new Date().toISOString();
           data.apps[0].version = process.env.version;
-          data.apps[0].downloadURL = "https://github.com/moaadhzair/Metia_V2/releases/download/v" + process.env.version + "/metia.signed.ipa";
+          data.apps[0].downloadURL = "https://github.com/emdy1/Metia_V2/releases/download/v" + process.env.version + "/metia.signed.ipa";
           data.apps[0].size = parseInt(process.env.size);
           data.apps[0].versionDate = newDate;
 
