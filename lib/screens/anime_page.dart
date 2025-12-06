@@ -249,7 +249,7 @@ class _AnimePageState extends State<AnimePage> {
                       bottom: 12,
                     ),
                     child: Placeholder(
-                      //TODO: here is where the extension picker and found name and "wrong?" is going to be in
+                      //TODO: here is where the extension picker and found name and "wrong?" is going to be in the future
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         //spacing: 5,
