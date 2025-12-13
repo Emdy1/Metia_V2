@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await UserData.initialize();
-
+  //main entry
   runApp(const MyApp());
 }
 
