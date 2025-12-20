@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:metia/data/extensions/extension.dart';
 import 'package:metia/data/user/credentials.dart';
+import 'package:metia/models/episode_database.dart';
 import 'package:metia/models/log_entry.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -10,6 +11,7 @@ class IsarServices {
     ExtensionSchema,
     UserCredentialsSchema,
     LogEntrySchema,
+    
   ];
   //Note: this should be called first befor any other isar related schemes
   static Future<void> setup() async {
