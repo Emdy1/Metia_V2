@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
+import 'package:metia/data/isar_services/isar_services.dart';
 import 'package:metia/data/user/credentials.dart';
 import 'package:metia/models/log_entry.dart';
 import 'package:path_provider/path_provider.dart';
@@ -8,11 +9,7 @@ class UserData {
   static late Isar isar;
 
   static Future<void> initialize() async {
-    final dir = await getApplicationDocumentsDirectory();
-    isar = await Isar.open(
-      [UserCredentialsSchema, LogEntrySchema], // Add all schemas here
-      directory: dir.path,
-    );
+    isar = IsarServices.isar;
   }
 
   static Future<bool> deletAuthKey() async {
@@ -30,9 +27,6 @@ class UserData {
       isar.userCredentials.put(creds);
     });
     return true;
-
-
-    
 
   }
 

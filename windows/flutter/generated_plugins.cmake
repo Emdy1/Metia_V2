@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  flutter_js
   isar_flutter_libs
   url_launcher_windows
 )

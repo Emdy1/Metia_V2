@@ -21,6 +21,9 @@ dependencies:
       url: https://github.com/moaadhzair/isar_flutter_libs.git
   path_provider: ^2.1.5
   cached_network_image: any
+  flutter_js: ^0.8.5  
+  http: ^1.6.0
+  webview_flutter: ^4.13.0
 
 
 dev_dependencies:

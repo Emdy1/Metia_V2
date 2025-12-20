@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:metia/data/extensions/extension_services.dart';
 import 'package:metia/models/logger.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
+import 'package:metia/screens/extensions_page.dart';
 import 'package:metia/screens/home/explorer_page.dart';
 import 'package:metia/screens/home/library_page.dart';
 import 'package:metia/screens/home/profile_page.dart';
@@ -31,6 +33,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    context.read<ExtensionServices>().getExtensions();
     _tabController = TabController(length: 3, vsync: this);
     initDeepLinks();
   }
@@ -252,6 +255,11 @@ _menuItemList(BuildContext context) {
       ),
     ),
     const PopupMenuItem<String>(
+      value: 'extensions',
+      height: 36,
+      child: Text('Extensions'),
+    ),
+    const PopupMenuItem<String>(
       value: 'Settings',
       height: 36,
       child: Text('Settings'),
@@ -262,6 +270,11 @@ _menuItemList(BuildContext context) {
 
 _switchMenuButtons(value, context) {
   switch (value) {
+    case 'extensions':
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => ExtensionsPage()));
+      break;
     case 'logs':
       Navigator.of(
         context,

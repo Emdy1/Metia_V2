@@ -1,11 +1,15 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:metia/data/extensions/extension_runtime_manager.dart';
 import 'package:metia/data/user/user_library.dart';
+import 'package:metia/js_core/script_executor.dart';
+import 'package:metia/models/logger.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:provider/provider.dart';
 
 class AnimePage extends StatefulWidget {
   final MediaListEntry anime;
+
   const AnimePage({super.key, required this.anime});
 
   @override
@@ -14,6 +18,8 @@ class AnimePage extends StatefulWidget {
 
 class _AnimePageState extends State<AnimePage> {
   final ScrollController scrollController = ScrollController();
+  late final ExtensionRuntimeManager runtime;
+  ScriptExecutor? executor;
 
   bool get isAppBarExpanded {
     return scrollController.hasClients &&
@@ -32,6 +38,9 @@ class _AnimePageState extends State<AnimePage> {
     scrollController.addListener(() {
       setState(() {});
     });
+    runtime = context.read<ExtensionRuntimeManager>();
+
+    executor = runtime.executor!;
   }
 
   @override
@@ -96,7 +105,7 @@ class _AnimePageState extends State<AnimePage> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      "No Extension Selected",
+                                      "No Extension Installed",
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -186,8 +195,10 @@ class _AnimePageState extends State<AnimePage> {
                                   ? "FINISHED"
                                   : "CONTINUE EPISODE ${(widget.anime.progress ?? 0) + 1}"
                             : "NULL",
-                        style: const TextStyle(
-                          color: Colors.green,
+                        style: TextStyle(
+                          color: runtime.ready.value
+                              ? Colors.green
+                              : Colors.grey,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -199,6 +210,10 @@ class _AnimePageState extends State<AnimePage> {
                           : const SizedBox(),
                       onPressed: () async {
                         //TODO: Start or continue watching logic here
+                        final results = await executor!.searchAnime("bleach");
+                        for (var anime in results) {
+                          Logger.log(anime.name);
+                        }
                       },
                     ),
                   ),
