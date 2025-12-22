@@ -7,6 +7,7 @@ class EpisodeData {
   Id id = Isar.autoIncrement;
   double? progress;
   double? total;
-  int? extensionId;
-  int? index;
+  int? extensionId; //Extension that used to get this episode data
+  int? index; //episode nummber
+  int? anilistMeidaId; // anilist media id of the anime 
 }

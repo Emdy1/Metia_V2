@@ -11,7 +11,7 @@ class IsarServices {
     ExtensionSchema,
     UserCredentialsSchema,
     LogEntrySchema,
-    
+    EpisodeDataSchema,
   ];
   //Note: this should be called first befor any other isar related schemes
   static Future<void> setup() async {

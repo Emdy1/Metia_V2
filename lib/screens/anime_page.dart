@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,6 +7,8 @@ import 'package:metia/data/extensions/extension_runtime_manager.dart';
 import 'package:metia/data/user/user_library.dart';
 import 'package:metia/js_core/anime.dart';
 import 'package:metia/js_core/script_executor.dart';
+import 'package:metia/models/anime_data_service.dart';
+import 'package:metia/models/episode_database.dart';
 import 'package:metia/models/logger.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -65,12 +66,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     executor = runtime.executor!;
     startFindingAnimeMatchAlgorithm();
 
-    runtime.extensionServices.addListener(() {
-      debugPrint(
-        "main extension is ${runtime.extensionServices.mainExtension!.name} with id:${runtime.extensionServices.mainExtension!.id}",
-      );
-    });
-  }
+    runtime.extensionServices.addListener(_onExtensionChange);
+  } //TO UPDATE THE STATE OF THE PROGRESSESION OF EACH EXTENSION!!!
 
   void startGettingAnimeEpisodes() async {
     isSearching = false;
@@ -116,6 +113,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       if (_tabController.length != tabCount) {
         _tabController.dispose();
         _tabController = TabController(length: tabCount, vsync: this);
+        _tabController.animation?.addListener(() {
+          setState(() {}); // fires DURING swipe
+        });
       }
       setState(() {
         isGettingEpisodes = false;
@@ -125,6 +125,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
   void startFindingAnimeMatchAlgorithm() async {
     matchedAnime = null;
+    isSearching = true;
+    isGettingEpisodes = false;
 
     if (runtime.extensionServices.mainExtension == null) {
       print("ERROR: there is no main extension");
@@ -240,6 +242,150 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     });
   }
 
+  void _onExtensionChange() {
+    if (mounted) {
+      setState(() {});
+    }
+    startFindingAnimeMatchAlgorithm();
+  }
+
+  void watchAnime(String url) {
+    bool isLoading = true;
+    List<StreamingData> streamingDatas = [];
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Run once
+            if (isLoading) {
+              executor!.getEpisodeStreamData(url).then((value) {
+                setState(() {
+                  streamingDatas = value;
+                  isLoading = false;
+                });
+              });
+            }
+
+            return Padding(
+              padding: EdgeInsetsGeometry.all(16),
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.orange),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 16,
+                      children: [
+                        Text(
+                          "Available Streams:",
+                          style: TextStyle(
+                            //color: MyColors.appbarTextColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16.5,
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.separated(
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
+                            itemCount: streamingDatas.length,
+                            itemBuilder: (context, index) {
+                              final streamingData = streamingDatas[index];
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: scheme.onSecondary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                width: double.infinity,
+                                height: 60,
+                                padding: const EdgeInsets.only(
+                                  right: 12,
+                                  left: 12,
+                                ),
+
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
+                                      style: const TextStyle(
+                                        //color: MyColors.appbarTextColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16.5,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        //download button
+                                        IconButton(
+                                          onPressed: () {
+                                            debugPrint("download started!");
+                                          },
+                                          icon: const Icon(
+                                            Icons.download,
+                                            //color: MyColors.appbarTextColor,
+                                          ),
+                                        ),
+                                        //watch button
+                                        IconButton(
+                                          onPressed: () async {
+                                            // Navigator.of(
+                                            //   contextt,
+                                            // ).pop("setState");
+                                            // final result = await Navigator.push(
+                                            //   context,
+                                            //   MaterialPageRoute(
+                                            //     builder: (context) => PlayerPage(
+                                            //       episodeList: episodeList,
+                                            //       currentExtension:
+                                            //           currentExtension,
+                                            //       episodeCount:
+                                            //           episodeList.length,
+                                            //       extensionEpisodeData:
+                                            //           episodeList[episodeIndex],
+                                            //       episodeNumber: episodeIndex + 1,
+                                            //       extensionStreamData:
+                                            //           snapshot.data?[index],
+                                            //       anilistData: animeData,
+                                            //     ),
+                                            //   ),
+                                            // );
+                                            // if (result == "setState") {
+                                            //   onDone();
+                                            // }
+                                          },
+                                          icon: const Icon(
+                                            Icons.play_arrow,
+                                            //color: MyColors.appbarTextColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    runtime.extensionServices.removeListener(_onExtensionChange);
+  }
+
   @override
   Widget build(BuildContext context) {
     currentExtensions = runtime.extensionServices.currentExtensions;
@@ -267,6 +413,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
         SizedBox(height: 100),
         Text(
           text,
+          textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.orange,
             fontSize: 30,
@@ -274,7 +421,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
           ),
         ),
         SizedBox(height: 20),
-        CircularProgressIndicator(color: Colors.orange),
+        activeProgression
+            ? CircularProgressIndicator(color: Colors.orange)
+            : Container(),
       ],
     );
   }
@@ -299,9 +448,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
           return count == 0
               ? const Center(
                   child: Padding(
-                    padding: EdgeInsets.only(top: 60.0),
+                    padding: EdgeInsets.only(bottom: 90.0),
                     child: Text(
-                      "No Anime Was Found!.",
+                      // "Anime Has \nNo Episodes Yet!",
+                      "",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.orange,
                         fontSize: 30,
@@ -317,53 +468,16 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     itemBuilder: (context, index) {
                       int episodeIndex = startIndex + index;
                       return buildAnimeEpisode(
-                        index,
+                        episodeIndex,
                         (widget.anime.progress ?? 0) == episodeIndex,
-                        50,
                         (widget.anime.progress ?? 0) > episodeIndex,
-                        episodeList[index],
-                        widget.anime.media.title.english!,
-
-                        // isCollapsed: _isCollapsed,
-                        // count: count,
-                        // startIndex: startIndex,
-                        // extensionAnimeTitle: extensionAnimeTitle,
-                        // widget: widget,
-                        // currentExtension: currentExtension,
-                        // episodeList: EpisodeList,
+                        episodeList[episodeIndex],
+                        matchedAnime!.name,
                       );
                     },
                     itemCount: count,
                   ),
                 );
-
-          /*
-                
-                int episodeIndex = widget.startIndex + index;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 7),
-                child: AnimeEpisode(
-                  title: widget.extensionAnimeTitle,
-                  current: (widget.widget.animeData["progress"] ?? 0) == episodeIndex,
-                  animeData: widget.widget.animeData,
-                  seen: (widget.widget.animeData["progress"] ?? 0) > episodeIndex,
-                  index: episodeIndex,
-                  onClicked: (details) async {
-                    await showSourcePicker(
-                      Navigator.of(context, rootNavigator: true).context,
-                      widget.currentExtension,
-                      widget.episodeList,
-                      episodeIndex,
-                      widget.widget.animeData,
-                      () {
-                        setState(() {});
-                      },
-                    );
-                  },
-                  episodeData: {"episode": widget.episodeList[episodeIndex]},
-                ),
-              );
-                */
         }),
       ),
     );
@@ -377,7 +491,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     } else if (isGettingEpisodes) {
       body = buildStatus("Getting Anime Episodes...", true);
     } else {
-      body = buildEpisodeList();
+      body = episodeList.isEmpty
+          ? buildStatus("Anime Has \nNo Episodes Yet!", false)
+          : buildEpisodeList();
     }
 
     return body;
@@ -386,20 +502,46 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   Widget buildAnimeEpisode(
     int index,
     bool current,
-    double progress,
     bool seen,
     MetiaEpisode episode,
     String title,
   ) {
+    EpisodeDataService episodeDataService = Provider.of<EpisodeDataService>(
+      context,
+    );
+    List<EpisodeData> currentEpisodes = episodeDataService.currentEpisodeDatas;
+
+    bool hasEpisodeData =
+        episodeDataService.getEpisodeDataOf(
+          widget.anime.media.id,
+          runtime.extensionServices.mainExtension!.id,
+          index,
+        ) !=
+        null;
+    double? percentage = 0; //INFO: out of 100 !!!!
+    EpisodeData? epData;
+    if (hasEpisodeData) {
+      epData = episodeDataService.getEpisodeDataOf(
+        widget.anime.media.id,
+        runtime.extensionServices.mainExtension!.id,
+        index,
+      );
+      percentage = (epData!.progress! / epData.total!) * 100;
+    }
+
+    //colors declarations!!
+    final curretnBackgroundColor = Provider.of<ThemeProvider>(context).scheme.onPrimaryFixedVariant;
+    final backgroundColor = Provider.of<ThemeProvider>(context).scheme.onSecondary;
+    final progressBarColor = Provider.of<ThemeProvider>(context).scheme.secondary;
+
     return GestureDetector(
-      onTapUp: (details) {},
+      onTapUp: (details) {
+        watchAnime(episodeList[index].url);
+      },
       child: Container(
         width: double.infinity,
         height: 108,
         decoration: BoxDecoration(
-          color: current
-              ? Colors.black
-              : Provider.of<ThemeProvider>(context).scheme.secondary,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Stack(
@@ -411,17 +553,13 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 child: Container(
                   height: 50,
                   width: double.infinity,
-                  color: Provider.of<ThemeProvider>(
-                    context,
-                  ).scheme.onSecondary, // background bar
+                  color: backgroundColor, // background bar
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: FractionallySizedBox(
-                      widthFactor: progress / 100, // from 0.0 to 1.0
+                      widthFactor: percentage / 100, // from 0.0 to 1.0
                       child: Container(
-                        color: Provider.of<ThemeProvider>(
-                          context,
-                        ).scheme.secondary,
+                        color: progressBarColor,
                       ),
                     ),
                   ),
@@ -434,8 +572,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 color: current
-                    ? Provider.of<ThemeProvider>(context).scheme.inversePrimary
-                    : Provider.of<ThemeProvider>(context).scheme.onSecondary,
+                    ? curretnBackgroundColor
+                    : backgroundColor,
               ),
             ),
             Opacity(
@@ -535,14 +673,12 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
               child: Align(
                 alignment: Alignment.bottomLeft,
                 child: Transform.translate(
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 4.1),
                   child: Container(
                     decoration: BoxDecoration(
                       color: current
-                          ? Provider.of<ThemeProvider>(context).scheme.inversePrimary
-                          : Provider.of<ThemeProvider>(
-                              context,
-                            ).scheme.onSecondary,
+                          ? curretnBackgroundColor
+                          : backgroundColor,
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(12),
                         bottomLeft: Radius.circular(12),
@@ -784,13 +920,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                             widget.anime.media.episodes != widget.anime.progress
                         ? const Icon(Icons.play_arrow_outlined, size: 20)
                         : const SizedBox(),
-                    onPressed: () async {
-                      //TODO: Start or continue watching logic here
-                      final results = await executor!.searchAnime("bleach");
-                      for (var anime in results) {
-                        Logger.log(anime.name);
-                      }
-                    },
+                    onPressed: () async {},
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -802,8 +932,29 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   isScrollable: true,
                   indicatorColor: Colors.transparent,
                   dividerColor: Colors.transparent,
+                  onTap: (value) {
+                    setState(() {});
+                  },
                   tabs: List.generate(labels.length, (i) {
-                    final bool selected = _tabController.index == i;
+                    final double value =
+                        _tabController.animation?.value ??
+                        _tabController.index.toDouble();
+
+                    final double distance = (value - i).abs();
+                    final double t = (1.0 - distance).clamp(0.0, 1.0);
+
+                    final Color background = Color.lerp(
+                      Colors.transparent,
+                      Colors.white,
+                      t,
+                    )!;
+
+                    final Color textColor = Color.lerp(
+                      const Color(0xFF9A989B),
+                      Colors.deepPurpleAccent,
+                      t,
+                    )!;
+
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 5),
                       padding: const EdgeInsets.symmetric(
@@ -812,16 +963,14 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: selected ? Colors.white : Colors.transparent,
+                        color: background,
                         border: Border.all(color: Colors.deepPurple),
                       ),
                       child: Center(
                         child: Text(
                           labels[i],
                           style: TextStyle(
-                            color: selected
-                                ? Colors.deepPurpleAccent
-                                : const Color(0xFF9A989B),
+                            color: textColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

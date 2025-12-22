@@ -196,7 +196,7 @@ class _AnimeCardState extends State<AnimeCard> {
                   ),
                   const SizedBox(height: 2),
                   //bottom text
-                  _buildBottomText(),
+                  Padding(padding: EdgeInsetsGeometry.only(bottom: 4), child: _buildBottomText(),)
                 ],
               ),
             ),
@@ -223,8 +223,8 @@ class _AnimeCardState extends State<AnimeCard> {
           children: isNewEpisodeTab
               ? [
                   Row(
-                    spacing: 2,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    spacing: 4,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         "${(widget.anime.media.nextAiringEpisode!.episode - 1) - widget.anime.progress!} Ep Behind",
@@ -232,7 +232,7 @@ class _AnimeCardState extends State<AnimeCard> {
                           fontWeight: FontWeight.bold,
                           fontSize: Theme.of(
                             context,
-                          ).textTheme.bodySmall!.fontSize,
+                          ).textTheme.bodyMedium!.fontSize,
                           color: Colors.orange,
                         ),
                       ),

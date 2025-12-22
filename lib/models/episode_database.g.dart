@@ -17,23 +17,28 @@ const EpisodeDataSchema = CollectionSchema(
   name: r'EpisodeData',
   id: -5749634641672024472,
   properties: {
-    r'extensionId': PropertySchema(
+    r'anilistMeidaId': PropertySchema(
       id: 0,
+      name: r'anilistMeidaId',
+      type: IsarType.long,
+    ),
+    r'extensionId': PropertySchema(
+      id: 1,
       name: r'extensionId',
       type: IsarType.long,
     ),
     r'index': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'index',
       type: IsarType.long,
     ),
     r'progress': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'progress',
       type: IsarType.double,
     ),
     r'total': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'total',
       type: IsarType.double,
     )
@@ -67,10 +72,11 @@ void _episodeDataSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.extensionId);
-  writer.writeLong(offsets[1], object.index);
-  writer.writeDouble(offsets[2], object.progress);
-  writer.writeDouble(offsets[3], object.total);
+  writer.writeLong(offsets[0], object.anilistMeidaId);
+  writer.writeLong(offsets[1], object.extensionId);
+  writer.writeLong(offsets[2], object.index);
+  writer.writeDouble(offsets[3], object.progress);
+  writer.writeDouble(offsets[4], object.total);
 }
 
 EpisodeData _episodeDataDeserialize(
@@ -80,11 +86,12 @@ EpisodeData _episodeDataDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = EpisodeData();
-  object.extensionId = reader.readLongOrNull(offsets[0]);
+  object.anilistMeidaId = reader.readLongOrNull(offsets[0]);
+  object.extensionId = reader.readLongOrNull(offsets[1]);
   object.id = id;
-  object.index = reader.readLongOrNull(offsets[1]);
-  object.progress = reader.readDoubleOrNull(offsets[2]);
-  object.total = reader.readDoubleOrNull(offsets[3]);
+  object.index = reader.readLongOrNull(offsets[2]);
+  object.progress = reader.readDoubleOrNull(offsets[3]);
+  object.total = reader.readDoubleOrNull(offsets[4]);
   return object;
 }
 
@@ -100,8 +107,10 @@ P _episodeDataDeserializeProp<P>(
     case 1:
       return (reader.readLongOrNull(offset)) as P;
     case 2:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 3:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 4:
       return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -201,6 +210,80 @@ extension EpisodeDataQueryWhere
 
 extension EpisodeDataQueryFilter
     on QueryBuilder<EpisodeData, EpisodeData, QFilterCondition> {
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      anilistMeidaIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'anilistMeidaId',
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      anilistMeidaIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'anilistMeidaId',
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      anilistMeidaIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'anilistMeidaId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      anilistMeidaIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'anilistMeidaId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      anilistMeidaIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'anilistMeidaId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      anilistMeidaIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'anilistMeidaId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
       extensionIdIsNull() {
     return QueryBuilder.apply(this, (query) {
@@ -570,6 +653,19 @@ extension EpisodeDataQueryLinks
 
 extension EpisodeDataQuerySortBy
     on QueryBuilder<EpisodeData, EpisodeData, QSortBy> {
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> sortByAnilistMeidaId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'anilistMeidaId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy>
+      sortByAnilistMeidaIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'anilistMeidaId', Sort.desc);
+    });
+  }
+
   QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> sortByExtensionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'extensionId', Sort.asc);
@@ -621,6 +717,19 @@ extension EpisodeDataQuerySortBy
 
 extension EpisodeDataQuerySortThenBy
     on QueryBuilder<EpisodeData, EpisodeData, QSortThenBy> {
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> thenByAnilistMeidaId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'anilistMeidaId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy>
+      thenByAnilistMeidaIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'anilistMeidaId', Sort.desc);
+    });
+  }
+
   QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> thenByExtensionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'extensionId', Sort.asc);
@@ -684,6 +793,12 @@ extension EpisodeDataQuerySortThenBy
 
 extension EpisodeDataQueryWhereDistinct
     on QueryBuilder<EpisodeData, EpisodeData, QDistinct> {
+  QueryBuilder<EpisodeData, EpisodeData, QDistinct> distinctByAnilistMeidaId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'anilistMeidaId');
+    });
+  }
+
   QueryBuilder<EpisodeData, EpisodeData, QDistinct> distinctByExtensionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'extensionId');
@@ -714,6 +829,12 @@ extension EpisodeDataQueryProperty
   QueryBuilder<EpisodeData, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<EpisodeData, int?, QQueryOperations> anilistMeidaIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'anilistMeidaId');
     });
   }
 

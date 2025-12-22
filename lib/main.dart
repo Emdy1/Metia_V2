@@ -17,6 +17,9 @@ void main() async {
   await EpisodeDataService.setup();
   await ExtensionServices.setup();
 
+  final episodeDataService = EpisodeDataService();
+  await episodeDataService.getEpisodeDatas();
+
   // Initialize ScriptExecutor early
   final extensionServices = ExtensionServices();
   await extensionServices.getExtensions();
@@ -31,7 +34,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider.value(value: extensionServices),
-        ChangeNotifierProvider(create: (_) => EpisodeDataService()),
+        ChangeNotifierProvider.value(value: episodeDataService),
       ],
       builder: (context, _) {
         final themeProvider = context.watch<ThemeProvider>();

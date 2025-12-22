@@ -19,25 +19,49 @@ class EpisodeDataService extends ChangeNotifier {
     await getEpisodeDatas();
   }
 
-  
+  EpisodeData? getEpisodeDataOf(
+    int anilistMeidaId,
+    int extensionId,
+    int index,
+  ) {
+    EpisodeData? epData;
+    if (currentEpisodeDatas
+        .where(
+          (episodeData) =>
+              episodeData.anilistMeidaId == anilistMeidaId &&
+              episodeData.extensionId == extensionId &&
+              episodeData.index == index,
+        )
+        .isNotEmpty) {
+      epData = currentEpisodeDatas
+          .where(
+            (episodeData) =>
+                episodeData.anilistMeidaId == anilistMeidaId &&
+                episodeData.extensionId == extensionId &&
+                episodeData.index == index,
+          )
+          .first;
+    }
+
+    return epData;
+  }
 
   /// Fetch all extensions and update local list
   Future<void> getEpisodeDatas() async {
-    List<EpisodeData> extensions = await db.episodeDatas.where().findAll();
+    List<EpisodeData> episodeDatas = await db.episodeDatas.where().findAll();
     currentEpisodeDatas.clear();
-    currentEpisodeDatas.addAll(extensions);
+    currentEpisodeDatas.addAll(episodeDatas);
     notifyListeners();
   }
 
   /// modify progress of an espiode data
-  /// /// Modify progress of an episode data
   Future<void> updateEpisodeProgress({
-    required int episodeId,
+    required int isarEpisodeId,
     double? progress,
     double? total,
   }) async {
     await db.writeTxn(() async {
-      final episode = await db.episodeDatas.get(episodeId);
+      final episode = await db.episodeDatas.get(isarEpisodeId);
       if (episode == null) return;
 
       if (progress != null) {
