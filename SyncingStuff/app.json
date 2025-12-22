@@ -1,11 +1,11 @@
 {
   "name": "Metia",
   "identifier": "com.example.metia",
-  "sourceURL": "https://raw.githubusercontent.com/moaadhzair/Metia_V2/refs/heads/main/SyncingStuff/app.json",
+  "sourceURL": "https://raw.githubusercontent.com/emdy1/Metia_V2/refs/heads/main/SyncingStuff/app.json",
   "apps": [
     {
       "name": "Metia 2",
-      "bundleIdentifier": "com.example.metia",
+      "bundleIdentifier": "com.mdhzair.metia_v2",
       "developerName": "MoaadXD",
       "version": "1.0.41",
       "versionDate": "2025-12-22T01:39:38.149Z",
