@@ -67,35 +67,51 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
     // context.watch<ExtensionServices>().getExtensions();
   }
 
-  void deletExtension(
+  Future<bool> deletExtension(
     Extension extension,
     ExtensionServices extensionServices,
-  ) {
-    showDialog(
+  ) async {
+    final isMain = extension.isMain == true;
+
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) {
         final theme = Theme.of(context);
         final colors = theme.colorScheme;
+
         return AlertDialog(
           title: Text('Delete extension', style: theme.textTheme.titleLarge),
           content: Text(
-            'Are you sure you wanna delete ${extension.name}?',
+            isMain
+                ? '“${extension.name}” is the main extension.\n\n'
+                      'If you delete it, the first extension in the list '
+                      'will automatically become the main extension.'
+                : 'Are you sure you wanna delete ${extension.name}?',
             style: theme.textTheme.bodyMedium,
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: colors.onSurface)),
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: colors.error,
                 foregroundColor: colors.onError,
               ),
-              onPressed: () {
-                extensionServices.deleteExtension(extension.id);
-                // delete logic
-                Navigator.pop(context);
+              onPressed: () async {
+                await extensionServices.deleteExtension(extension.id);
+
+                // 👇 If main was deleted, reassign
+                if (isMain) {
+                  final remaining = extensionServices.currentExtensions;
+
+                  if (remaining.isNotEmpty) {
+                    await extensionServices.setMainExtension(remaining.first);
+                  }
+                }
+
+                Navigator.pop(context, true);
               },
               child: const Text('Delete'),
             ),
@@ -103,6 +119,8 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
         );
       },
     );
+
+    return result ?? false;
   }
 
   void _setMainExtension() {
@@ -121,7 +139,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
   Widget build(BuildContext context) {
     final extensionServices = context.watch<ExtensionServices>();
 
-    List<Extension> Extensions = extensionServices.currentExtensions;
+    List<Extension> extensions = extensionServices.currentExtensions;
 
     return Scaffold(
       appBar: AppBar(
@@ -132,18 +150,20 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
         ),
       ),
       floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          FloatingActionButton(
-            heroTag: 'edit_extension',
-            onPressed: _setMainExtension,
-            child: Icon(isEditingMainExtension ? Icons.check : Icons.edit),
-          ),
+          if (extensions.isNotEmpty)
+            FilledButton.tonalIcon(
+              icon: Icon(isEditingMainExtension ? Icons.check : Icons.edit),
+              label: Text(isEditingMainExtension ? "Apply" : "Edit"),
+              onPressed: _setMainExtension,
+            ),
           const SizedBox(width: 16),
-          FloatingActionButton(
-            heroTag: 'add_extension',
+          FloatingActionButton.extended(
+            heroTag: "add_extension",
+            icon: const Icon(Icons.add),
+            label: const Text("Add"),
             onPressed: _addExtension,
-            child: Icon(Icons.add),
           ),
         ],
       ),
@@ -153,105 +173,131 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
         child: ListView.separated(
           separatorBuilder: (context, index) => SizedBox(height: 8),
           itemBuilder: (context, index) {
-            final extension = Extensions[index];
-            return GestureDetector(
-              onLongPress: () => deletExtension(extension, extensionServices),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Provider.of<ThemeProvider>(context).scheme.onSecondary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                height: 100,
-                child: Padding(
-                  padding: EdgeInsetsGeometry.only(
-                    top: 8,
-                    left: 8,
-                    right: 24,
-                    bottom: 8,
-                  ),
+            final extension = extensions[index];
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(15.0),
+              child: Dismissible(
+                key: ValueKey(extension.id),
+                direction: DismissDirection.endToStart,
+
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  color: Theme.of(context).colorScheme.error,
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    spacing: 8,
                     children: [
-                      SizedBox(
-                        height: 80,
-                        width: 80,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: CachedNetworkImage(
-                            imageUrl:
-                                extension.iconUrl ??
-                                "https://cdn-icons-png.flaticon.com/512/8114/8114406.png",
-                          ),
+                      Text(
+                        "Delete",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: Theme.of(context).colorScheme.onError,
                         ),
                       ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                extension.name ?? "Broken Extension",
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                "Author: ${extension.author ?? "Broken Extension"}",
-                                style: TextStyle(
-                                  color: Provider.of<ThemeProvider>(
-                                    context,
-                                  ).scheme.secondary,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                "${extension.language} - ${(extension.isDub ?? false) & (extension.isSub ?? false)
-                                    ? "Dub | Sub"
-                                    : (extension.isSub ?? false)
-                                    ? "Sub"
-                                    : (extension.isDub ?? false)
-                                    ? "Dub"
-                                    : "not specified"}",
-                                style: TextStyle(
-                                  color: Provider.of<ThemeProvider>(
-                                    context,
-                                  ).scheme.secondary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      Icon(
+                        Icons.delete,
+                        color: Theme.of(context).colorScheme.onError,
                       ),
-                      isEditingMainExtension
-                          ? Checkbox(
-                              value: extension.isMain,
-                              onChanged: (isMain) async {
-                                await extensionServices.setMainExtension(
-                                  extension,
-                                );
-                                setState(() {});
-                              },
-                            )
-                          : extension.isMain
-                          ? Icon(Icons.check)
-                          : Container(),
                     ],
+                  ),
+                ),
+                confirmDismiss: (_) =>
+                    deletExtension(extension, extensionServices),
+                onDismissed: (_) {},
+                child: Container(
+                  color: Provider.of<ThemeProvider>(context).scheme.onSecondary,
+                  height: 100,
+                  child: Padding(
+                    padding: EdgeInsetsGeometry.only(
+                      top: 8,
+                      left: 8,
+                      right: 24,
+                      bottom: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          height: 80,
+                          width: 80,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: CachedNetworkImage(
+                              imageUrl:
+                                  extension.iconUrl ??
+                                  "https://cdn-icons-png.flaticon.com/512/8114/8114406.png",
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  extension.name ?? "Broken Extension",
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "Author: ${extension.author ?? "Broken Extension"}",
+                                  style: TextStyle(
+                                    color: Provider.of<ThemeProvider>(
+                                      context,
+                                    ).scheme.secondary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "${extension.language} - ${(extension.isDub ?? false) & (extension.isSub ?? false)
+                                      ? "Dub | Sub"
+                                      : (extension.isSub ?? false)
+                                      ? "Sub"
+                                      : (extension.isDub ?? false)
+                                      ? "Dub"
+                                      : "not specified"}",
+                                  style: TextStyle(
+                                    color: Provider.of<ThemeProvider>(
+                                      context,
+                                    ).scheme.secondary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Checkbox(
+                          value: extension.isMain,
+                          onChanged: isEditingMainExtension
+                              ? (isMain) async {
+                                  await extensionServices.setMainExtension(
+                                    extension,
+                                  );
+                                  setState(() {});
+                                }
+                              : null,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             );
           },
-          itemCount: Extensions.length,
+          itemCount: extensions.length,
         ),
       ),
     );

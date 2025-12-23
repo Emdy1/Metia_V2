@@ -233,12 +233,12 @@ class _AnimeCardState extends State<AnimeCard> {
                           fontSize: Theme.of(
                             context,
                           ).textTheme.bodyMedium!.fontSize,
-                          color: Colors.orange,
+                          color: Theme.of(context).colorScheme.tertiary,
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.notifications_active,
-                        color: Colors.orange,
+                        color: Theme.of(context).colorScheme.tertiary,
                         size: 16,
                       ),
                     ],
@@ -248,6 +248,7 @@ class _AnimeCardState extends State<AnimeCard> {
                   Text(
                     "${widget.anime.progress}/${widget.anime.media.episodes ?? "?"}",
                     style: TextStyle(
+                      color: Theme.of(context).colorScheme.tertiary,
                       fontSize: Theme.of(
                         context,
                       ).textTheme.bodyMedium!.fontSize,
@@ -269,10 +270,10 @@ class _AnimeCardState extends State<AnimeCard> {
                           fontSize: Theme.of(
                             context,
                           ).textTheme.bodyMedium!.fontSize,
-                          color: Colors.orange,
+                          color: Theme.of(context).colorScheme.tertiary,
                         ),
                       ),
-                      const Icon(Icons.star, color: Colors.orange, size: 16),
+                      Icon(Icons.star, color: Theme.of(context).colorScheme.tertiary, size: 16),
                     ],
                   ),
                 ],
@@ -330,13 +331,13 @@ class _AnimeCardState extends State<AnimeCard> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.schedule, color: Colors.orange, size: 22),
+            Icon(Icons.schedule, color: Theme.of(context).colorScheme.tertiary, size: 22),
             Material(
               type: MaterialType.transparency,
               child: Text(
                 ' $timestring',
-                style: const TextStyle(
-                  color: Colors.orange,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.tertiary,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   //shadows: [Shadow(blurRadius: 4, color: Colors.black)],

@@ -71,9 +71,17 @@ class _LibraryPageState extends State<LibraryPage>
       }).toList(),
       controller: _tabController,
       tabColors: user.userLibrary.library.map((e) {
-        return e.color == Colors.white
-            ? Theme.of(context).unselectedWidgetColor
-            : e.color;
+        Color color = Colors.black;
+
+        if (e.color == Colors.white) {
+          color = Theme.of(context).colorScheme.onSecondaryContainer;
+        } else if (e.color == Colors.green) {
+          color = Theme.of(context).colorScheme.onTertiaryContainer;
+        } else if (e.color == Colors.orange) {
+          color = Theme.of(context).colorScheme.error;
+        }
+
+        return color;
       }).toList(),
     );
   }
@@ -84,7 +92,7 @@ class _LibraryPageState extends State<LibraryPage>
     return Expanded(
       child: Column(
         children: [
-          SizedBox(height: 2,),
+          SizedBox(height: 2),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -96,20 +104,22 @@ class _LibraryPageState extends State<LibraryPage>
                           child: GridView.builder(
                             key: PageStorageKey('library ${e.name}'),
                             cacheExtent: 500,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          
-                              crossAxisCount: Tools.getResponsiveCrossAxisVal(
-                                MediaQuery.of(context).size.width,
-                                itemWidth: 135,
-                              ),
-                              mainAxisExtent: 268,
-                              childAspectRatio: 0.7,
-                            ),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount:
+                                      Tools.getResponsiveCrossAxisVal(
+                                        MediaQuery.of(context).size.width,
+                                        itemWidth: 135,
+                                      ),
+                                  mainAxisExtent: 268,
+                                  childAspectRatio: 0.7,
+                                ),
                             itemCount: e.entries.length,
                             itemBuilder: (context, index) {
                               MediaListEntry anime = e.entries[index];
                               return AnimeCard(
                                 key: ValueKey(anime.id),
+                                
                                 context: context,
                                 index: index,
                                 tabName: anime.status,
@@ -118,7 +128,7 @@ class _LibraryPageState extends State<LibraryPage>
                               );
                             },
                           ),
-          
+
                           onRefresh: () {
                             return Provider.of<UserProvider>(
                               context,
@@ -139,16 +149,21 @@ class _LibraryPageState extends State<LibraryPage>
                             ),
                             SliverGrid(
                               key: PageStorageKey('library ${e.name}'),
-          
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: Tools.getResponsiveCrossAxisVal(
-                                  MediaQuery.of(context).size.width,
-                                  itemWidth: 135,
-                                ),
-                                mainAxisExtent: 268,
-                                childAspectRatio: 0.7,
-                              ),
-                              delegate: SliverChildBuilderDelegate((context, index) {
+
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount:
+                                        Tools.getResponsiveCrossAxisVal(
+                                          MediaQuery.of(context).size.width,
+                                          itemWidth: 135,
+                                        ),
+                                    mainAxisExtent: 268,
+                                    childAspectRatio: 0.7,
+                                  ),
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
                                 MediaListEntry anime = e.entries[index];
                                 return AnimeCard(
                                   key: ValueKey(anime.id),

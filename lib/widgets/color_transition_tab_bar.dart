@@ -35,7 +35,10 @@ class _ColorTransitionTabBarState extends State<ColorTransitionTabBar> {
       animation: animation,
       builder: (context, child) {
         final double value = animation.value;
-        final int fromIndex = value.floor().clamp(0, widget.tabColors.length - 1);
+        final int fromIndex = value.floor().clamp(
+          0,
+          widget.tabColors.length - 1,
+        );
         final int toIndex = value.ceil().clamp(0, widget.tabColors.length - 1);
         final double t = value - fromIndex;
 
@@ -52,6 +55,7 @@ class _ColorTransitionTabBarState extends State<ColorTransitionTabBar> {
 
   Widget _buildTabBar(Color indicatorColor) {
     return TabBar(
+      splashFactory: NoSplash.splashFactory,
       labelPadding: const EdgeInsets.symmetric(horizontal: 10),
       controller: widget.controller,
       isScrollable: true,

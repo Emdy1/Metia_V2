@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:metia/colors/material_theme.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  ColorScheme _scheme = MaterialTheme.darkScheme();
-  ColorScheme get scheme => _scheme;
-  bool isDarkMode = true;
-  bool isLightMode = false;
+  bool _isDarkMode = true;
+
+  bool get isDarkMode => _isDarkMode;
+
+  ColorScheme get scheme => ColorScheme.fromSeed(
+    seedColor: Color(0xFF7E4300),
+    brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+  );
 
   void setLightMode() {
-    isDarkMode = false;
-    isLightMode = true;
-    _scheme = MaterialTheme.lightScheme();
+    _isDarkMode = false;
     notifyListeners();
   }
 
   void setDarkMode() {
-    isDarkMode = true;
-    isLightMode = false;
-    _scheme = MaterialTheme.darkScheme();
+    _isDarkMode = true;
     notifyListeners();
   }
 }

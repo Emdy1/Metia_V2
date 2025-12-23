@@ -101,28 +101,36 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         surfaceTintColor: Colors.transparent,
         backgroundColor: Colors.transparent,
         actions: [
-          (Provider.of<UserProvider>(context).isLoggedIn)
-              ? PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (value) {
-                    _switchMenuButtons(value, context);
-                  },
-                  itemBuilder: (BuildContext context) => _menuItemList(context),
-                )
-              : PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (value) {
-                    _switchMenuButtons(value, context);
-                  },
-                  itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem<String>(
-                      enabled: true,
-                      height: 36,
-                      value: 'logs',
-                      child: Text('Logs'),
-                    ),
-                  ],
-                ),
+          Theme(
+            data: Theme.of(context).copyWith(
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              splashFactory: NoSplash.splashFactory,
+            ),
+            child: (Provider.of<UserProvider>(context).isLoggedIn)
+                ? PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) {
+                      _switchMenuButtons(value, context);
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        _menuItemList(context),
+                  )
+                : PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) {
+                      _switchMenuButtons(value, context);
+                    },
+                    itemBuilder: (BuildContext context) => [
+                      const PopupMenuItem<String>(
+                        enabled: true,
+                        height: 36,
+                        value: 'logs',
+                        child: Text('Logs'),
+                      ),
+                    ],
+                  ),
+          ),
         ],
 
         leading: Padding(
@@ -141,28 +149,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       body: Row(
         children: [
           if (isLandscpae)
-            NavigationRail(
-              selectedIndex: _tabController.index,
-              onDestinationSelected: (index) {
-                setState(() {
-                  _tabController.index = index;
-                });
-              },
-              labelType: NavigationRailLabelType.all,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home),
-                  label: Text('Library'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.explore),
-                  label: Text('Explore'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person),
-                  label: Text('Profile'),
-                ),
-              ],
+            Theme(
+              data: Theme.of(context).copyWith(
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                splashFactory: NoSplash.splashFactory,
+              ),
+              child: NavigationRail(
+                selectedIndex: _tabController.index,
+                onDestinationSelected: (index) {
+                  setState(() {
+                    _tabController.index = index;
+                  });
+                },
+                labelType: NavigationRailLabelType.all,
+                destinations: const [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home),
+                    label: Text('Library'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.explore),
+                    label: Text('Explore'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.person),
+                    label: Text('Profile'),
+                  ),
+                ],
+              ),
             ),
           if (isLandscpae) VerticalDivider(thickness: 1),
 
@@ -176,27 +191,34 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
 
       bottomNavigationBar: !isLandscpae
-          ? BottomNavigationBar(
-              currentIndex: _tabController.index,
-              onTap: (index) {
-                setState(() {
-                  _tabController.index = index;
-                });
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Library',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.explore),
-                  label: 'Explore',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Profile',
-                ),
-              ],
+          ? Theme(
+              data: Theme.of(context).copyWith(
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                splashFactory: NoSplash.splashFactory,
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _tabController.index,
+                onTap: (index) {
+                  setState(() {
+                    _tabController.index = index;
+                  });
+                },
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home),
+                    label: 'Library',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.explore),
+                    label: 'Explore',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.person),
+                    label: 'Profile',
+                  ),
+                ],
+              ),
             )
           : SizedBox(),
     );
