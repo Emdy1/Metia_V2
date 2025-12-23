@@ -399,15 +399,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     currentExtensions = runtime.extensionServices.currentExtensions;
     return Scaffold(
       body: NestedScrollView(
+        
         controller: scrollController,
         headerSliverBuilder: (nestedContext, innerBoxIsScrolled) => [
           buildAnimeInfo(),
-          SliverOverlapAbsorber(
-            handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
-              nestedContext,
-            ),
-            sliver: buildExtensionInfo(),
-          ),
+          buildExtensionInfo(),
         ],
         body: buildBody(),
       ),
@@ -437,58 +433,56 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   }
 
   Widget buildEpisodeList() {
-    return Transform.translate(
-      offset: Offset(0, 179),
-      child: TabBarView(
-        controller: _tabController,
-        children: List.generate(tabCount, (tabIndex) {
-          bool isLandscape =
-              MediaQuery.orientationOf(context) == Orientation.landscape;
-          EdgeInsetsGeometry padding = EdgeInsets.only(
-            left: (isLandscape ? 20 : 0) + 12,
-            right: (isLandscape ? 20 : 0) + 12,
-            top: 12,
-          );
-          int count = tabItemCounts[tabIndex];
-          int startIndex = (tabIndex == 0)
-              ? 0
-              : firstTabCount + (tabIndex - 1) * eachItemForTab;
-          return count == 0
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 90.0),
-                    child: Text(
-                      // "Anime Has \nNo Episodes Yet!",
-                      //TODO: check this out!!!!
-                      "",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: scheme.tertiary,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w600,
-                      ),
+    return TabBarView(
+      
+      controller: _tabController,
+      children: List.generate(tabCount, (tabIndex) {
+        bool isLandscape =
+            MediaQuery.orientationOf(context) == Orientation.landscape;
+        EdgeInsetsGeometry padding = EdgeInsets.only(
+          left: (isLandscape ? 20 : 0) + 12,
+          right: (isLandscape ? 20 : 0) + 12,
+          //top: 12,
+        );
+        int count = tabItemCounts[tabIndex];
+        int startIndex = (tabIndex == 0)
+            ? 0
+            : firstTabCount + (tabIndex - 1) * eachItemForTab;
+        return count == 0
+            ? Center(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 90.0),
+                  child: Text(
+                    // "Anime Has \nNo Episodes Yet!",
+                    //TODO: check this out!!!!
+                    "",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: scheme.tertiary,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                )
-              : Padding(
-                  padding: padding,
-                  child: ListView.separated(
-                    separatorBuilder: (context, index) => SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      int episodeIndex = startIndex + index;
-                      return buildAnimeEpisode(
-                        episodeIndex,
-                        (widget.anime.progress ?? 0) == episodeIndex,
-                        (widget.anime.progress ?? 0) > episodeIndex,
-                        episodeList[episodeIndex],
-                        matchedAnime!.name,
-                      );
-                    },
-                    itemCount: count,
-                  ),
-                );
-        }),
-      ),
+                ),
+              )
+            : Padding(
+                padding: padding,
+                child: ListView.separated(
+                  separatorBuilder: (context, index) => SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    int episodeIndex = startIndex + index;
+                    return buildAnimeEpisode(
+                      episodeIndex,
+                      (widget.anime.progress ?? 0) == episodeIndex,
+                      (widget.anime.progress ?? 0) > episodeIndex,
+                      episodeList[episodeIndex],
+                      matchedAnime!.name,
+                    );
+                  },
+                  itemCount: count,
+                ),
+              );
+      }),
     );
   }
 
@@ -731,7 +725,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     return SliverAppBar(
       toolbarHeight: 179,
       expandedHeight: 179,
-      collapsedHeight: 179,
+      //collapsedHeight: 179,
       pinned: true,
       leading: const SizedBox(),
       flexibleSpace: FlexibleSpaceBar(
@@ -1020,8 +1014,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   Widget buildAnimeInfo() {
     return SliverAppBar(
       foregroundColor: scheme.primary,
-      backgroundColor: scheme.background,
-      surfaceTintColor: scheme.background,
+      backgroundColor: scheme.surface,
+      surfaceTintColor: scheme.surface,
       pinned: true,
       title: AnimatedOpacity(
         opacity: isAppBarExpanded ? 1 : 0,
@@ -1029,7 +1023,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
         child: Text(widget.anime.media.title.english ?? "No Title"),
       ),
       expandedHeight: (MediaQuery.of(context).size.height) * 0.5,
-      stretch: true,
+      //stretch: true,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
