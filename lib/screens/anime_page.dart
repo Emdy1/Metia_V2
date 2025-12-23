@@ -65,9 +65,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       final expanded = isAppBarExpanded;
       if (expanded != lastExpanded) {
         lastExpanded = expanded;
-        //setState(() {}); // Only rebuild when expansion state changes
+        setState(() {}); // Only rebuild when expansion state changes
       }
     });
+
     lastExpanded = false;
     runtime = context.read<ExtensionRuntimeManager>();
     executor = runtime.executor!;
