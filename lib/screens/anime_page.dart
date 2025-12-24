@@ -12,6 +12,7 @@ import 'package:metia/models/anime_database_service.dart';
 import 'package:metia/models/episode_data_service.dart';
 import 'package:metia/models/episode_database.dart';
 import 'package:metia/models/theme_provider.dart';
+import 'package:metia/screens/extensions_page.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:metia/widgets/custom_tab.dart';
 import 'package:metia/widgets/custom_widgets.dart';
@@ -78,7 +79,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     //TO UPDATE THE STATE OF THE PROGRESSESION OF EACH EXTENSION!!!
     runtime.extensionServices.addListener(_onExtensionChange);
 
-    startFindingAnimeMatchAlgorithm();
+    if (runtime.extensionServices.mainExtension != null)
+      startFindingAnimeMatchAlgorithm();
   }
 
   void _animeDbListener() {
@@ -436,167 +438,178 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       context: context,
       //isScrollControlled: true,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            // Initial fetch, only once
-            if (!hasFetched) {
-              hasFetched = true;
-              Future.microtask(() async {
-                final value = await executor!.searchAnime(keyword);
-                setState(() {
-                  animes = value;
-                  isLoading = false;
-                });
-              });
-            }
+        return LayoutBuilder(
+          builder: (context, boxConstraints) {
+            return StatefulBuilder(
+              builder: (context, setState) {
+                // Initial fetch, only once
+                if (!hasFetched) {
+                  hasFetched = true;
+                  Future.microtask(() async {
+                    final value = await executor!.searchAnime(keyword);
+                    setState(() {
+                      animes = value;
+                      isLoading = false;
+                    });
+                  });
+                }
 
-            Future<void> search(String query) async {
-              setState(() => isLoading = true);
-              final value = await executor!.searchAnime(query);
-              setState(() {
-                animes = value;
-                isLoading = false;
-              });
-            }
+                Future<void> search(String query) async {
+                  setState(() => isLoading = true);
+                  final value = await executor!.searchAnime(query);
+                  setState(() {
+                    animes = value;
+                    isLoading = false;
+                  });
+                }
 
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                MediaQuery.of(context).viewInsets.bottom + 16,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: searchController,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      labelText: 'Search Anime',
-                      hintText: 'Enter anime name',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onSubmitted: (value) {
-                      if (value.trim().isNotEmpty) {
-                        search(value.trim());
-                      }
-                    },
+                return Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    MediaQuery.of(context).viewInsets.bottom + 16,
                   ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: isLoading
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              color: Theme.of(context).colorScheme.tertiary,
-                            ),
-                          )
-                        : GridView.builder(
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount:
-                                      Tools.getResponsiveCrossAxisVal(
-                                        MediaQuery.of(context).size.width,
-                                        itemWidth: 135,
-                                      ),
-                                  mainAxisExtent: 268,
-                                  childAspectRatio: 0.7,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: searchController,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          labelText: 'Search Anime',
+                          hintText: 'Enter anime name',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onSubmitted: (value) {
+                          if (value.trim().isNotEmpty) {
+                            search(value.trim());
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: isLoading
+                            ? Center(
+                                child: CircularProgressIndicator(
+                                  color: Theme.of(context).colorScheme.tertiary,
                                 ),
-                            itemCount: animes.length,
-                            itemBuilder: (context, index) {
-                              final poster = animes[index].poster;
-                              final name = animes[index].name;
+                              )
+                            : GridView.builder(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount:
+                                          Tools.getResponsiveCrossAxisVal(
+                                            boxConstraints.maxWidth,
+                                            itemWidth: 135,
+                                          ),
+                                      mainAxisExtent: 268,
+                                      childAspectRatio: 0.7,
+                                    ),
+                                itemCount: animes.length,
+                                itemBuilder: (context, index) {
+                                  final poster = animes[index].poster;
+                                  final name = animes[index].name;
 
-                              return GestureDetector(
-                                onTap: () async {
-                                  await animeDatabaseService
-                                      .updateAnimeDatabases(
-                                        animes[index],
-                                        widget.anime.media.id,
-                                        runtime
-                                            .extensionServices
-                                            .mainExtension!
-                                            .id,
-                                      );
-                                  Navigator.of(context).pop();
-                                },
-                                child: Card(
-                                  child: Stack(
-                                    children: [
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: SizedBox(
-                                          width: 135,
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.stretch,
-                                            children: [
-                                              SizedBox(
-                                                height: 183,
-                                                width: 135,
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  child: CachedNetworkImage(
-                                                    imageUrl: poster,
-                                                    fit: BoxFit.cover,
-                                                    placeholder:
-                                                        (
-                                                          context,
-                                                          url,
-                                                        ) => const Center(
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                                strokeWidth: 2,
-                                                              ),
-                                                        ),
-                                                    errorWidget:
-                                                        (context, url, error) =>
-                                                            const Icon(
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      await animeDatabaseService
+                                          .updateAnimeDatabases(
+                                            animes[index],
+                                            widget.anime.media.id,
+                                            runtime
+                                                .extensionServices
+                                                .mainExtension!
+                                                .id,
+                                          );
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Card(
+                                      child: Stack(
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.center,
+                                            child: SizedBox(
+                                              width: 135,
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 183,
+                                                    width: 135,
+                                                    child: ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      child: CachedNetworkImage(
+                                                        imageUrl: poster,
+                                                        fit: BoxFit.cover,
+                                                        placeholder:
+                                                            (
+                                                              context,
+                                                              url,
+                                                            ) => const Center(
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        2,
+                                                                  ),
+                                                            ),
+                                                        errorWidget:
+                                                            (
+                                                              context,
+                                                              url,
+                                                              error,
+                                                            ) => const Icon(
                                                               Icons.error,
                                                             ),
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 5),
-                                              Expanded(
-                                                child: Center(
-                                                  child: Text(
-                                                    name,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    maxLines: 2,
-                                                    style: TextStyle(
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).colorScheme.primary,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize:
-                                                          Theme.of(context)
-                                                              .textTheme
-                                                              .bodyLarge!
-                                                              .fontSize,
+                                                      ),
                                                     ),
-                                                    textAlign: TextAlign.center,
                                                   ),
-                                                ),
+                                                  const SizedBox(height: 5),
+                                                  Expanded(
+                                                    child: Center(
+                                                      child: Text(
+                                                        name,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        maxLines: 2,
+                                                        style: TextStyle(
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .bodyLarge!
+                                                                  .fontSize,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
+                                            ),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
@@ -985,8 +998,14 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       child: PopupMenuButton<String>(
                         tooltip: "Select Extension",
                         onSelected: (String id) async {
-                          if (id == "no_extension")
-                            return; //INFO: return if no extension is installed!
+                          if (id == "no_extension") {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => ExtensionsPage(),
+                              ),
+                            );
+                            return;
+                          }
                           await runtime.extensionServices.setMainExtension(
                             currentExtensions!
                                 .where((e) => e.id == int.parse(id))
@@ -1128,6 +1147,13 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       padding: const EdgeInsets.only(top: 4.0),
                       child: GestureDetector(
                         onTap: () {
+                          if (runtime.extensionServices.mainExtension == null ||
+                              runtime
+                                  .extensionServices
+                                  .currentExtensions
+                                  .isEmpty)
+                            return;
+
                           final title =
                               runtime
                                       .extensionServices
@@ -1154,7 +1180,15 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         child: Text(
                           "Wrong?",
                           style: TextStyle(
-                            color: scheme.primary,
+                            color:
+                                runtime.extensionServices.mainExtension ==
+                                        null ||
+                                    runtime
+                                        .extensionServices
+                                        .currentExtensions
+                                        .isEmpty
+                                ? scheme.onSurface.withOpacity(0.38)
+                                : scheme.primary,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -1169,9 +1203,25 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 Center(
                   child: TextButton.icon(
                     style: TextButton.styleFrom(
-                      foregroundColor: scheme.primaryFixedDim,
+                      foregroundColor:
+                          runtime.extensionServices.mainExtension == null ||
+                              runtime
+                                  .extensionServices
+                                  .currentExtensions
+                                  .isEmpty
+                          ? scheme.onSurfaceVariant.withOpacity(0.38)
+                          : scheme.primaryFixedDim,
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(color: scheme.primaryFixedDim),
+                        side: BorderSide(
+                          color:
+                              runtime.extensionServices.mainExtension == null ||
+                                  runtime
+                                      .extensionServices
+                                      .currentExtensions
+                                      .isEmpty
+                              ? scheme.onSurfaceVariant.withOpacity(0.38)
+                              : scheme.primaryFixedDim,
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -1182,9 +1232,14 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                 : "CONTINUE EPISODE ${(widget.anime.progress ?? 0) + 1}"
                           : "NULL",
                       style: TextStyle(
-                        color: runtime.ready.value
-                            ? scheme.primaryFixedDim
-                            : scheme.onSurfaceVariant.withOpacity(0.38),
+                        color:
+                            runtime.extensionServices.mainExtension == null ||
+                                runtime
+                                    .extensionServices
+                                    .currentExtensions
+                                    .isEmpty
+                            ? scheme.onSurfaceVariant.withOpacity(0.38)
+                            : scheme.primaryFixedDim,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1194,6 +1249,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         ? const Icon(Icons.play_arrow_outlined, size: 20)
                         : const SizedBox(),
                     onPressed: () async {
+                      if (runtime.extensionServices.mainExtension == null ||
+                          runtime.extensionServices.currentExtensions.isEmpty) {
+                        return;
+                      }
                       watchAnime(
                         episodeList[widget.anime.progress ?? 0].url,
                       ); // i used ?? 0 to guard against referencing a null progress if the user has never watched that anime
