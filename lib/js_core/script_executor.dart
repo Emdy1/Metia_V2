@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:metia/js_core/anime.dart';
+import 'package:metia/models/anime_database.dart';
 import 'package:metia/models/logger.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 

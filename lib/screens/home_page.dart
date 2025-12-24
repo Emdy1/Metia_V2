@@ -24,7 +24,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late final TabController _tabController;
+  late TabController _tabController;
   StreamSubscription<Uri>? _linkSubscription;
 
   //final List<Widget> _tabs = [LibraryPage(), ExplorerPage(), ProfilePage()];
@@ -34,7 +34,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     context.read<ExtensionServices>().getExtensions();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn)
+          ? 3
+          : 2,
+      vsync: this,
+    );
+    Provider.of<UserProvider>(context, listen: false).addListener(() {
+      _tabController = TabController(
+        length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn)
+            ? 3
+            : 2,
+        vsync: this,
+      );
+    });
     initDeepLinks();
   }
 
@@ -163,11 +176,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   });
                 },
                 labelType: NavigationRailLabelType.all,
-                destinations: const [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.home),
-                    label: Text('Library'),
-                  ),
+                destinations: [
+                  if (Provider.of<UserProvider>(context).isLoggedIn)
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home),
+                      label: Text('Library'),
+                    ),
                   NavigationRailDestination(
                     icon: Icon(Icons.explore),
                     label: Text('Explore'),
@@ -184,7 +198,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [LibraryPage(), ExplorerPage(), ProfilePage()],
+              children: [
+                if (Provider.of<UserProvider>(context).isLoggedIn)
+                  LibraryPage(),
+                ExplorerPage(),
+                ProfilePage(),
+              ],
             ),
           ),
         ],
@@ -204,11 +223,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     _tabController.index = index;
                   });
                 },
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home),
-                    label: 'Library',
-                  ),
+                items: [
+                  if (Provider.of<UserProvider>(context).isLoggedIn)
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.home),
+                      label: 'Library',
+                    ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.explore),
                     label: 'Explore',

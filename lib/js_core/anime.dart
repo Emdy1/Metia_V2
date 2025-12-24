@@ -1,9 +1,9 @@
-class MetiaAnime {
-  late String name;
-  late int length;
-  late String poster;
-  late String url;
-}
+// class MetiaAnime {
+//   late String name;
+//   late int length;
+//   late String poster;
+//   late String url;
+// }
 
 class MetiaEpisode {
   late String poster;

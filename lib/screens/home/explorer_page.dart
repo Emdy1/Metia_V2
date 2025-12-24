@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:metia/anilist/anime.dart';
 import 'package:metia/data/user/profile.dart';
+import 'package:metia/data/user/user_library.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:metia/widgets/explorer_anime_card.dart';
@@ -21,27 +22,93 @@ class ExplorerPage extends StatefulWidget {
 class _ExplorerPageState extends State<ExplorerPage> {
   late Profile user;
   late double itemWidth;
+  late bool isLoggedIn;
+  late Profile defaultUser;
+
+  bool isLoadingExplorerContent = false;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    isLoggedIn = Provider.of<UserProvider>(context, listen: false).isLoggedIn;
+    isLoadingExplorerContent = isLoggedIn
+        ? Provider.of<UserProvider>(
+            context,
+            listen: false,
+          ).isLoadingExplorerContent
+        : Provider.of<UserProvider>(
+            context,
+            listen: false,
+          ).isLoadingDefaultExplorerContent;
+    defaultUser = Profile(
+      name: "",
+      avatarLink: "",
+      bannerImage: "",
+      id: 0,
+      userLibrary: UserLibrary(library: []),
+      statistics: Statistics(),
+      userActivityPage: ActivityPage(
+        pageInfo: PageInfo(
+          total: 0,
+          perPage: 0,
+          currentPage: 0,
+          lastPage: 0,
+          hasNextPage: false,
+        ),
+        activities: [],
+      ),
+      userLists: [],
+      explorerContent: [[], [], [], [], [], []],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    isLoadingExplorerContent = isLoggedIn
+        ? Provider.of<UserProvider>(
+            context,
+            listen: false,
+          ).isLoadingExplorerContent
+        : Provider.of<UserProvider>(
+            context,
+            listen: false,
+          ).isLoadingDefaultExplorerContent;
+    defaultUser.explorerContent = Provider.of<UserProvider>(
+      context,
+    ).defaultExplorerContent;
     itemWidth =
         MediaQuery.of(context).size.width /
         Tools.getResponsiveCrossAxisVal(
           MediaQuery.of(context).size.width,
           itemWidth: 135,
         );
-    user = Provider.of<UserProvider>(context).user;
-    bool isLoggedIn = Provider.of<UserProvider>(context).isLoggedIn;
+    user = isLoggedIn ? Provider.of<UserProvider>(context).user : defaultUser;
+
     return Scaffold(
-      body: isLoggedIn
-          ? _buidlExplorerBody()
-          : Center(child: Text("Please log in to explore anime")),
+      body: isLoadingExplorerContent
+          ? _buildLoadingExplorerContnet()
+          //: _buildLoadingExplorerContnet(),
+          : _buidlExplorerBody(),
+    );
+  }
+
+  _buildLoadingExplorerContnet() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        spacing: 16,
+        children: [
+          Text(
+            "Loading Explorer...",
+            style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+              color: Theme.of(context).colorScheme.tertiary,
+            ),
+          ),
+          const CircularProgressIndicator(),
+        ],
+      ),
     );
   }
 

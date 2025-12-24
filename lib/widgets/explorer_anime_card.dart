@@ -4,7 +4,9 @@ import 'package:metia/anilist/anime.dart';
 import 'package:metia/data/user/profile.dart';
 import 'package:metia/data/user/user_library.dart';
 import 'package:metia/models/login_provider.dart';
+import 'package:metia/screens/anime_page.dart';
 import 'package:metia/tools/general_tools.dart';
+import 'package:metia/widgets/library_anime_card.dart';
 import 'package:provider/provider.dart';
 
 class ExplorerAnimeCard extends StatefulWidget {
@@ -60,12 +62,22 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                   //cover
                   GestureDetector(
                     onTap: () {
-                      debugPrint("tapped on ${widget.anime.title.english}");
+                      Navigator.of(context).push(
+                        CustomPageRoute(
+                          builder: (context) => AnimePage(
+                            anime: MediaListEntry(
+                              id: 0,
+                              status: "",
+                              media: widget.anime,
+                            ),
+                          ),
+                        ),
+                      );
                     },
                     child: SizedBox(
                       height: 183,
                       width: 135,
-                      child: ClipRRect( 
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Stack(
                           fit: StackFit.expand,
@@ -121,7 +133,7 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                                       Tools.transferToAnotherList(
                                         anime,
                                         context,
-                                        false
+                                        false,
                                       );
                                     },
                                     child: ClipRRect(

@@ -15,7 +15,7 @@ class UserProvider extends ChangeNotifier {
   bool hasNextPage = true;
   bool _isLoggedIn = false;
   Profile _user = Profile(
-    explorerContent: [],
+    explorerContent: [[], [], [], [], []],
     userLists: [],
     userActivityPage: ActivityPage(
       pageInfo: PageInfo(
@@ -43,8 +43,120 @@ class UserProvider extends ChangeNotifier {
   Profile get user => _user;
   List<UserActivity> get userActivities => _user.userActivityPage.activities;
 
+  List<List<Media>> defaultExplorerContent = [[], [], [], [], []];
+  bool isLoadingDefaultExplorerContent = false;
+  bool isLoadingExplorerContent = false;
+
   UserProvider() {
     _initializeLoginState();
+    _loadDefaultExplorerContent();
+  }
+
+  void _loadDefaultExplorerContent() async {
+    isLoadingDefaultExplorerContent = true;
+    defaultExplorerContent = await getDefaultExplorerContent();
+    isLoadingDefaultExplorerContent = false;
+    notifyListeners();
+  }
+
+  void logIn(String authKey) async {
+    await UserData.saveAuthKey(authKey);
+    Logger.log('Saved auth key of the user', level: 'INFO');
+    await _getUserData();
+    Logger.log('got user data with the name of ${user.name}', level: 'INFO');
+    _isLoggedIn = true;
+    notifyListeners();
+    Logger.log(
+      'Notified the listening build methods to rebuild the app',
+      level: 'INFO',
+    );
+  }
+
+  void logOut() {
+    _isLoggedIn = false;
+    UserData.deletAuthKey();
+    notifyListeners();
+  }
+
+  Future<ActivityPage> _fetchUserActivities(
+    int userId,
+    int page,
+    int perPage,
+  ) async {
+    const String url = 'https://graphql.anilist.co';
+    String authKey = await _getAuthKey();
+
+    final query = '''
+    query (\$id: Int, \$type: ActivityType, \$page: Int, \$perPage: Int, ) {
+      Page(page: \$page, perPage: \$perPage) {
+        pageInfo {
+          total
+          perPage
+          currentPage
+          lastPage
+          hasNextPage
+        }
+        activities(userId: \$id, type: \$type, sort: [PINNED, ID_DESC]) {
+          ... on ListActivity {
+            type
+            status
+            progress
+            likeCount
+            createdAt
+            media {
+              id
+              type
+              status(version: 2)
+              isAdult
+              bannerImage
+              description
+              genres
+              title {
+                english
+                romaji
+                native
+              }
+              episodes
+              averageScore
+              season
+              seasonYear
+              coverImage {
+                large
+                extraLarge
+                medium
+                color
+              }
+              duration
+              nextAiringEpisode {
+                airingAt
+                episode
+              }
+            }
+          }
+        }
+      }
+    }
+  ''';
+
+    final variables = {
+      "id": userId,
+      "type": "ANIME_LIST",
+      "page": page,
+      "perPage": perPage,
+    };
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $authKey',
+      },
+      body: jsonEncode({"query": query, "variables": variables}),
+    );
+
+    final data = jsonDecode(response.body)['data']['Page'];
+    var src = ActivityPage.fromJson(data);
+    return src;
   }
 
   Future<void> loadMoreActivities() async {
@@ -72,18 +184,6 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _initializeLoginState() async {
-    String authKey = await _getAuthKey();
-    _isLoggedIn = authKey != "empty";
-
-    if (_isLoggedIn) {
-      notifyListeners();
-      await _getUserData();
-    }
-
-    notifyListeners();
-  }
-
   Future<String> getAuthKey() async {
     return _getAuthKey();
   }
@@ -92,21 +192,12 @@ class UserProvider extends ChangeNotifier {
     return await UserData.getAuthKey();
   }
 
-  void logIn(String authKey) async {
-    await UserData.saveAuthKey(authKey);
-    Logger.log('Saved auth key of the user', level: 'INFO');
-    await _getUserData();
-    Logger.log('got user data with the name of ${user.name}', level: 'INFO');
-    _isLoggedIn = true;
-    notifyListeners();
-    Logger.log(
-      'Notified the listening build methods to rebuild the app',
-      level: 'INFO',
-    );
-  }
-
   Future<void> reloadUserData() async {
+    isLoadingExplorerContent = true;
+
     await _getUserData();
+    isLoadingExplorerContent = false;
+
     notifyListeners();
   }
 
@@ -282,10 +373,10 @@ class UserProvider extends ChangeNotifier {
         'variables': {
           'type': 'ANIME',
           'userId': userId,
-          "season": "SPRING",
+          "season": "FALL",
           "seasonYear": 2025,
-          "nextSeason": "SUMMER",
-          "nextYear": 2025,
+          "nextSeason": "WINTER",
+          "nextYear": 2026,
         },
       }),
     );
@@ -439,94 +530,19 @@ class UserProvider extends ChangeNotifier {
     );
   }
 
-  Future<ActivityPage> _fetchUserActivities(
-    int userId,
-    int page,
-    int perPage,
-  ) async {
-    const String url = 'https://graphql.anilist.co';
+  Future<void> _initializeLoginState() async {
     String authKey = await _getAuthKey();
+    _isLoggedIn = authKey != "empty";
 
-    final query = '''
-    query (\$id: Int, \$type: ActivityType, \$page: Int, \$perPage: Int, ) {
-      Page(page: \$page, perPage: \$perPage) {
-        pageInfo {
-          total
-          perPage
-          currentPage
-          lastPage
-          hasNextPage
-        }
-        activities(userId: \$id, type: \$type, sort: [PINNED, ID_DESC]) {
-          ... on ListActivity {
-            type
-            status
-            progress
-            likeCount
-            createdAt
-            media {
-              id
-              type
-              status(version: 2)
-              isAdult
-              bannerImage
-              description
-              genres
-              title {
-                english
-                romaji
-                native
-              }
-              episodes
-              averageScore
-              season
-              seasonYear
-              coverImage {
-                large
-                extraLarge
-                medium
-                color
-              }
-              duration
-              nextAiringEpisode {
-                airingAt
-                episode
-              }
-            }
-          }
-        }
-      }
+    if (_isLoggedIn) {
+      notifyListeners();
+      await _getUserData();
     }
-  ''';
 
-    final variables = {
-      "id": userId,
-      "type": "ANIME_LIST",
-      "page": page,
-      "perPage": perPage,
-    };
-
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $authKey',
-      },
-      body: jsonEncode({"query": query, "variables": variables}),
-    );
-
-    final data = jsonDecode(response.body)['data']['Page'];
-    var src = ActivityPage.fromJson(data);
-    return src;
-  }
-
-  void logOut() {
-    _isLoggedIn = false;
-    UserData.deletAuthKey();
     notifyListeners();
   }
 
-  Future<void> deleteCustomList(String ListName) async {
+  Future<void> deleteCustomList(String listName) async {
     const String url = 'https://graphql.anilist.co';
 
     List userAnimeLists = user.userLists;
@@ -536,7 +552,7 @@ class UserProvider extends ChangeNotifier {
         .map<String>((list) => list['name'] as String)
         .toList();
 
-    userAnimeCustomLists.remove(ListName);
+    userAnimeCustomLists.remove(listName);
 
     final Map<String, dynamic> body = {
       'query': '''
@@ -610,5 +626,261 @@ class UserProvider extends ChangeNotifier {
     } else {
       print('Failed to add custom list: ${response.body}');
     }
+  }
+
+  // logOut State
+
+  Future<List<List<Media>>> getDefaultExplorerContent() async {
+    const String url = 'https://graphql.anilist.co';
+
+    // Step 2: Query MediaListCollection with userId
+    const String discoverAnimeQuery = '''
+query (
+  \$season: MediaSeason,
+  \$seasonYear: Int,
+  \$nextSeason: MediaSeason,
+  \$nextYear: Int
+) {
+  trending: Page(page: 1, perPage: 6) {
+    media(sort: TRENDING_DESC, type: ANIME, isAdult: false) {
+      ...mediaFields
+    }
+  }
+
+  season: Page(page: 1, perPage: 6) {
+    media(
+      season: \$season,
+      seasonYear: \$seasonYear,
+      sort: POPULARITY_DESC,
+      type: ANIME,
+      isAdult: false
+    ) {
+      ...mediaFields
+    }
+  }
+
+  nextSeason: Page(page: 1, perPage: 6) {
+    media(
+      season: \$nextSeason,
+      seasonYear: \$nextYear,
+      sort: POPULARITY_DESC,
+      type: ANIME,
+      isAdult: false
+    ) {
+      ...mediaFields
+    }
+  }
+
+  popular: Page(page: 1, perPage: 6) {
+    media(sort: POPULARITY_DESC, type: ANIME, isAdult: false) {
+      ...mediaFields
+    }
+  }
+
+  top: Page(page: 1, perPage: 10) {
+    media(sort: SCORE_DESC, type: ANIME, isAdult: false) {
+      ...mediaFields
+    }
+  }
+}
+
+fragment mediaFields on Media {
+  id
+  title {
+    userPreferred
+    english
+    romaji
+    native
+  }
+  coverImage {
+    extraLarge
+    large
+    color
+  }
+  bannerImage
+  season
+  seasonYear
+  description
+  type
+  format
+  status(version: 2)
+  episodes
+  duration
+  genres
+  isAdult
+  averageScore
+  popularity
+  nextAiringEpisode {
+    airingAt
+    timeUntilAiring
+    episode
+  }
+  studios(isMain: true) {
+    edges {
+      isMain
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+''';
+
+    final mediaListResponse = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'query': discoverAnimeQuery,
+        'variables': {
+          'type': 'ANIME',
+          'season': 'FALL',
+          'seasonYear': 2025,
+          'nextSeason': 'WINTER',
+          'nextYear': 2026,
+        },
+      }),
+    );
+
+    final Map<String, dynamic> mediaListData = jsonDecode(
+      mediaListResponse.body,
+    );
+
+    // if (mediaListData['errors'] != null) {
+    //   debugPrint('Error fetching media list: ${mediaListData['errors']}');
+    //   return [[], [], [], [], []];
+    // }
+
+    // final mediaListGroups =
+    //     mediaListData['data']['MediaListCollection']['lists'] as List;
+
+    // // Parse media list groups
+    // List<MediaListGroup> parsedGroups = mediaListGroups.map((group) {
+    //   // Step 1: Create the MediaListGroup first with empty entries
+    //   final mediaListGroup = MediaListGroup(
+    //     color: group['name'] == "Watching" ? Colors.green : Colors.white,
+    //     isInteractive: group['name'] != "Airing",
+    //     name: group['name'],
+    //     entries: [], // will fill this next
+    //     isCustom: ![
+    //       'Watching',
+    //       'Planning',
+    //       'Completed',
+    //       'Paused',
+    //       'Dropped',
+    //     ].contains(group['name']),
+    //   );
+
+    //   // Step 2: Fill in the entries and set the group reference
+    //   List<MediaListEntry> entries = (group['entries'] as List).map((entry) {
+    //     final mediaJson = entry['media'];
+    //     var mediaListEntry = MediaListEntry(
+    //       id: entry['id'],
+    //       progress: entry['progress'],
+    //       status: entry['status'],
+    //       media: Media.fromJson(mediaJson),
+    //     );
+
+    //     // Use your setGroup() method
+    //     mediaListEntry.setGroup(mediaListGroup);
+
+    //     return mediaListEntry;
+    //   }).toList();
+
+    //   // Step 3: Add entries to the group
+    //   mediaListGroup.entries.addAll(entries);
+
+    //   return mediaListGroup; // ✅ return the filled group
+    // }).toList();
+
+    // //Step 1: Create the Airing group early (empty for now)
+    // final airingGroup = MediaListGroup(
+    //   color: Colors.orange,
+    //   name: "Airing",
+    //   entries: [],
+    //   isInteractive: false,
+    //   isCustom: false,
+    // );
+
+    // // Step 2: Extract "airing" entries and reassign their group
+    // for (final group in parsedGroups) {
+    //   if (["Planning", "Watching"].contains(group.name)) {
+    //     for (final entry in group.entries) {
+    //       final media = entry.media;
+    //       final nextEp = media.nextAiringEpisode;
+
+    //       if (nextEp != null && nextEp.episode > (entry.progress ?? 0) + 1) {
+    //         // Reassign entry to airing group
+    //         MediaListEntry newEntry = MediaListEntry(
+    //           id: entry.id,
+    //           progress: entry.progress,
+    //           status: entry.status,
+    //           media: media,
+    //         );
+    //         newEntry.setGroup(airingGroup);
+    //         airingGroup.entries.add(newEntry);
+    //       }
+    //     }
+    //   }
+    // }
+
+    // // Step 3: Insert the airing group at the beginning
+    // parsedGroups.insert(0, airingGroup);
+
+    // const desiredOrder = [
+    //   "Airing",
+    //   "Watching",
+    //   "Planning",
+    //   "Completed",
+    //   "Paused",
+    //   "Dropped",
+    // ];
+
+    // parsedGroups.sort((a, b) {
+    //   int indexA = desiredOrder.indexOf(a.name ?? "");
+    //   int indexB = desiredOrder.indexOf(b.name ?? "");
+    //   return indexA.compareTo(indexB);
+    // });
+
+    // // Fetch user activities as before
+    // ActivityPage activityPage = await _fetchUserActivities(userId, 1, 20);
+
+    // final customLists = List<String>.from(
+    //   viewer['mediaListOptions']['animeList']['customLists'],
+    // );
+
+    // final defaultLists = [
+    //   {'name': 'Watching', 'isCustom': false},
+    //   {'name': 'Planning', 'isCustom': false},
+    //   {'name': 'Completed', 'isCustom': false},
+    //   {'name': 'Dropped', 'isCustom': false},
+    //   {'name': 'Paused', 'isCustom': false},
+    // ];
+
+    // final custom = customLists.map((name) => {'name': name, 'isCustom': true});
+
+    // final userList = [...defaultLists, ...custom];
+
+    // Assign your Profile object
+    return [
+      (mediaListData["data"]["trending"]["media"] as List)
+          .map((entry) => Media.fromJson(entry))
+          .toList(),
+      (mediaListData["data"]["season"]["media"] as List)
+          .map((entry) => Media.fromJson(entry))
+          .toList(),
+      (mediaListData["data"]["nextSeason"]["media"] as List)
+          .map((entry) => Media.fromJson(entry))
+          .toList(),
+      (mediaListData["data"]["popular"]["media"] as List)
+          .map((entry) => Media.fromJson(entry))
+          .toList(),
+      (mediaListData["data"]["top"]["media"] as List)
+          .map((entry) => Media.fromJson(entry))
+          .toList(),
+    ];
   }
 }
