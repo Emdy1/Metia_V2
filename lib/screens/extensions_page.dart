@@ -152,7 +152,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (extensions.isNotEmpty)
+          if (extensions.length > 1)
             FilledButton.tonalIcon(
               icon: Icon(isEditingMainExtension ? Icons.check : Icons.edit),
               label: Text(isEditingMainExtension ? "Apply" : "Edit"),

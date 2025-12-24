@@ -127,21 +127,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       _switchMenuButtons(value, context);
                     },
                     itemBuilder: (BuildContext context) =>
-                        _menuItemList(context),
+                        _loggedMenuItemList(context),
                   )
                 : PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert),
                     onSelected: (value) {
                       _switchMenuButtons(value, context);
                     },
-                    itemBuilder: (BuildContext context) => [
-                      const PopupMenuItem<String>(
-                        enabled: true,
-                        height: 36,
-                        value: 'logs',
-                        child: Text('Logs'),
-                      ),
-                    ],
+                    itemBuilder: (BuildContext context) =>
+                        _defaultMenuItemList(),
                   ),
           ),
         ],
@@ -245,7 +239,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 }
 
-_menuItemList(BuildContext context) {
+_defaultMenuItemList() {
+  return [
+    const PopupMenuItem<String>(
+      enabled: true,
+      height: 36,
+      value: 'logs',
+      child: Text('Logs'),
+    ),
+    const PopupMenuItem<String>(
+      value: 'extensions',
+      height: 36,
+      child: Text('Extensions'),
+    ),
+    const PopupMenuItem<String>(
+      value: 'Settings',
+      height: 36,
+      child: Text('Settings'),
+    ),
+  ];
+}
+
+_loggedMenuItemList(BuildContext context) {
   return [
     const PopupMenuItem<String>(
       enabled: false,

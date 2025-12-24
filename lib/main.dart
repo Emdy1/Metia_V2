@@ -47,6 +47,7 @@ void main() async {
         final themeProvider = context.watch<ThemeProvider>();
 
         return MaterialApp(
+          //showPerformanceOverlay: true,
           debugShowCheckedModeBanner: false,
           title: 'Metia',
           theme: ThemeData(colorScheme: themeProvider.scheme),

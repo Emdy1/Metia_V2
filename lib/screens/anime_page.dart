@@ -13,6 +13,8 @@ import 'package:metia/models/episode_data_service.dart';
 import 'package:metia/models/episode_database.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/tools/general_tools.dart';
+import 'package:metia/widgets/custom_tab.dart';
+import 'package:metia/widgets/custom_widgets.dart';
 import 'package:provider/provider.dart';
 
 class AnimePage extends StatefulWidget {
@@ -27,6 +29,7 @@ class AnimePage extends StatefulWidget {
 class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   final ScrollController scrollController = ScrollController();
   late final ExtensionRuntimeManager runtime;
+  late final AnimeDatabaseService animeDatabaseService;
   ScriptExecutor? executor;
   List<Extension>? currentExtensions;
 
@@ -61,25 +64,34 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 1, vsync: this);
-    scrollController.addListener(() {
-      final expanded = isAppBarExpanded;
-      if (expanded != lastExpanded) {
-        lastExpanded = expanded;
-        setState(() {}); // Only rebuild when expansion state changes
-      }
-    });
-    //once the matched anime has been updated by correctMatchedAnime function update the UI
-    Provider.of<AnimeDatabaseService>(context, listen: false).addListener(() {
-      startFindingAnimeMatchAlgorithm();
-    });
     lastExpanded = false;
+
     runtime = context.read<ExtensionRuntimeManager>();
     executor = runtime.executor!;
-    startFindingAnimeMatchAlgorithm();
 
+    animeDatabaseService = context.read<AnimeDatabaseService>();
+
+    _tabController = TabController(length: 1, vsync: this);
+
+    //once the matched anime has been updated by correctMatchedAnime function update the UI
+    animeDatabaseService.addListener(_animeDbListener);
+    //TO UPDATE THE STATE OF THE PROGRESSESION OF EACH EXTENSION!!!
     runtime.extensionServices.addListener(_onExtensionChange);
-  } //TO UPDATE THE STATE OF THE PROGRESSESION OF EACH EXTENSION!!!
+
+    startFindingAnimeMatchAlgorithm();
+  }
+
+  void _animeDbListener() {
+    if (!mounted) return;
+    startFindingAnimeMatchAlgorithm();
+  }
+
+  void _onExtensionChange() {
+    if (mounted) {
+      setState(() {});
+    }
+    startFindingAnimeMatchAlgorithm();
+  }
 
   void startGettingAnimeEpisodes() async {
     isSearching = false;
@@ -125,9 +137,6 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       if (_tabController.length != tabCount) {
         _tabController.dispose();
         _tabController = TabController(length: tabCount, vsync: this);
-        _tabController.animation?.addListener(() {
-          setState(() {}); // fires DURING swipe
-        });
       }
       setState(() {
         isGettingEpisodes = false;
@@ -136,14 +145,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   }
 
   void startFindingAnimeMatchAlgorithm() async {
-    if (Provider.of<AnimeDatabaseService>(
-      context,
-      listen: false,
-    ).existsInDatabse(
+    if (animeDatabaseService.existsInDatabse(
       widget.anime.media.id,
       runtime.extensionServices.mainExtension!.id,
     )) {
-      matchedAnime = Provider.of<AnimeDatabaseService>(context, listen: false)
+      matchedAnime = animeDatabaseService
           .getAnimeDataOf(
             widget.anime.media.id,
             runtime.extensionServices.mainExtension!.id,
@@ -268,7 +274,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       print("Error finding matching anime: $e");
     }
 
-    Provider.of<AnimeDatabaseService>(context, listen: false).addAnimeDatabases(
+    animeDatabaseService.addAnimeDatabases(
       matchedAnime!,
       widget.anime.media.id,
       runtime.extensionServices.mainExtension!.id,
@@ -285,13 +291,6 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     setState(() {
       //foundTitle = clossestAnime == null ? " " : clossestAnime["title"];
     });
-  }
-
-  void _onExtensionChange() {
-    if (mounted) {
-      setState(() {});
-    }
-    startFindingAnimeMatchAlgorithm();
   }
 
   void watchAnime(String url) {
@@ -512,14 +511,15 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
                               return GestureDetector(
                                 onTap: () async {
-                                  await Provider.of<AnimeDatabaseService>(
-                                    context,
-                                    listen: false,
-                                  ).updateAnimeDatabases(
-                                    animes[index],
-                                    widget.anime.media.id,
-                                    runtime.extensionServices.mainExtension!.id,
-                                  );
+                                  await animeDatabaseService
+                                      .updateAnimeDatabases(
+                                        animes[index],
+                                        widget.anime.media.id,
+                                        runtime
+                                            .extensionServices
+                                            .mainExtension!
+                                            .id,
+                                      );
                                   Navigator.of(context).pop();
                                 },
                                 child: Card(
@@ -609,6 +609,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     // TODO: implement dispose
     super.dispose();
     runtime.extensionServices.removeListener(_onExtensionChange);
+    animeDatabaseService.removeListener(_animeDbListener);
   }
 
   @override
@@ -657,19 +658,17 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
         EdgeInsetsGeometry padding = EdgeInsets.only(
           left: (isLandscape ? 20 : 0) + 12,
           right: (isLandscape ? 20 : 0) + 12,
-          //top: 12,
         );
         int count = tabItemCounts[tabIndex];
         int startIndex = (tabIndex == 0)
             ? 0
             : firstTabCount + (tabIndex - 1) * eachItemForTab;
+
         return count == 0
             ? Center(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 90.0),
+                  padding: const EdgeInsets.only(bottom: 90.0),
                   child: Text(
-                    // "Anime Has \nNo Episodes Yet!",
-                    //TODO: check this out!!!!
                     "",
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -683,15 +682,26 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
             : Padding(
                 padding: padding,
                 child: ListView.separated(
-                  separatorBuilder: (context, index) => SizedBox(height: 8),
+                  // OPTIMIZATION: Add itemExtent for better performance
+                  //itemExtent: 116, // 108 + 8 separator
+                  //cacheExtent: 500, // Preload nearby items
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     int episodeIndex = startIndex + index;
-                    return buildAnimeEpisode(
-                      episodeIndex,
-                      (widget.anime.progress ?? 0) == episodeIndex,
-                      (widget.anime.progress ?? 0) > episodeIndex,
-                      episodeList[episodeIndex],
-                      matchedAnime!.name,
+
+                    // OPTIMIZATION: Use the new optimized widget
+                    return EpisodeItem(
+                      key: ValueKey('episode_$episodeIndex'),
+                      index: episodeIndex,
+                      animeId: widget.anime.media.id,
+                      extensionId: runtime.extensionServices.mainExtension!.id,
+                      current: (widget.anime.progress ?? 0) == episodeIndex,
+                      seen: (widget.anime.progress ?? 0) > episodeIndex,
+                      episode: episodeList[episodeIndex],
+                      title: matchedAnime!.name,
+                      scheme: scheme,
+                      onTap: () => watchAnime(episodeList[episodeIndex].url),
                     );
                   },
                   itemCount: count,
@@ -1184,65 +1194,56 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         ? const Icon(Icons.play_arrow_outlined, size: 20)
                         : const SizedBox(),
                     onPressed: () async {
-                      watchAnime(episodeList[widget.anime.progress!].url);
+                      watchAnime(
+                        episodeList[widget.anime.progress ?? 0].url,
+                      ); // i used ?? 0 to guard against referencing a null progress if the user has never watched that anime
                     },
                   ),
                 ),
                 const SizedBox(height: 10),
                 //Tab bar builder
-                TabBar(
-                  controller: _tabController,
-                  tabAlignment: TabAlignment.start,
-                  labelPadding: EdgeInsets.zero,
-                  isScrollable: true,
-                  indicatorColor: Colors.transparent,
-                  dividerColor: Colors.transparent,
-                  onTap: (value) {
-                    setState(() {});
-                  },
-                  tabs: List.generate(labels.length, (i) {
-                    final double value =
-                        _tabController.animation?.value ??
-                        _tabController.index.toDouble();
-
-                    final double distance = (value - i).abs();
-                    final double t = (1.0 - distance).clamp(0.0, 1.0);
-
-                    final Color background = Color.lerp(
-                      Colors.transparent,
-                      scheme.primary,
-                      t,
-                    )!;
-
-                    final Color textColor = Color.lerp(
-                      const Color(0xFF9A989B),
-                      scheme.onPrimary,
-                      t,
-                    )!;
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: background,
-                        border: Border.all(color: scheme.primaryContainer),
-                      ),
-                      child: Center(
-                        child: Text(
-                          labels[i],
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                StatefulBuilder(
+                  builder: (context, safeSetState) {
+                    return TabBar(
+                      controller: _tabController,
+                      tabAlignment: TabAlignment.start,
+                      labelPadding: EdgeInsets.zero,
+                      isScrollable: true,
+                      indicatorColor: Colors.transparent,
+                      dividerColor: Colors.transparent,
+                      onTap: (value) {
+                        safeSetState(() {});
+                      },
+                      tabs: List.generate(labels.length, (i) {
+                        return CustomTab(
+                          controller: _tabController,
+                          scheme: scheme,
+                          label: labels[i],
+                          index: i,
+                        );
+                      }),
                     );
-                  }),
+                  },
                 ),
+                // TabBar(
+                //   controller: _tabController,
+                //   tabAlignment: TabAlignment.start,
+                //   labelPadding: EdgeInsets.zero,
+                //   isScrollable: true,
+                //   indicatorColor: Colors.transparent,
+                //   dividerColor: Colors.transparent,
+                //   onTap: (value) {
+                //     setState(() {});
+                //   },
+                //   tabs: List.generate(labels.length, (i) {
+                //     return CustomTab(
+                //       controller: _tabController,
+                //       scheme: scheme,
+                //       label: labels[i],
+                //       index: i,
+                //     );
+                //   }),
+                // ),
               ],
             ),
           ),
@@ -1257,10 +1258,21 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       backgroundColor: scheme.surface,
       surfaceTintColor: scheme.surface,
       pinned: true,
-      title: AnimatedOpacity(
-        opacity: isAppBarExpanded ? 1 : 0,
-        duration: Duration(milliseconds: 100),
-        child: Text(widget.anime.media.title.english ?? "No Title"),
+      title: StatefulBuilder(
+        builder: (context, safeSetState) {
+          scrollController.addListener(() {
+            final expanded = isAppBarExpanded;
+            if (expanded != lastExpanded) {
+              lastExpanded = expanded;
+              safeSetState(() {}); // Only rebuild when expansion state changes
+            }
+          });
+          return AnimatedOpacity(
+            opacity: isAppBarExpanded ? 1 : 0,
+            duration: Duration(milliseconds: 100),
+            child: Text(widget.anime.media.title.english ?? "No Title"),
+          );
+        },
       ),
       expandedHeight: (MediaQuery.of(context).size.height) * 0.5,
       //stretch: true,
@@ -1341,13 +1353,14 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                             children: [
                               Icon(
                                 Icons.schedule,
-                                color: scheme.tertiary,
+                                color: scheme.primary,
+
                                 size: 22,
                               ),
                               Text(
                                 ' Episode $episode: $timeString',
                                 style: TextStyle(
-                                  color: scheme.tertiary,
+                                  color: scheme.primary,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
                                   //shadows: [Shadow(blurRadius: 4, color: Colors.black)],

@@ -6,7 +6,7 @@ class ThemeProvider extends ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
 
   ColorScheme get scheme => ColorScheme.fromSeed(
-    seedColor: Color(0xFF7E4300),
+    seedColor: Color.fromARGB(255, 72, 255, 0),
     brightness: _isDarkMode ? Brightness.dark : Brightness.light,
   );
 
