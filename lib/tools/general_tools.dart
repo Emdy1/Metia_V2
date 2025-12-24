@@ -340,4 +340,52 @@ class Tools {
       },
     );
   }
+
+  static Future<void> updateAnimeTracking({
+    required int mediaId,
+    String? status, // e.g., "CURRENT", "COMPLETED"
+    int? progress, // e.g., number of episodes watched
+    double? score, // e.g., 8.5
+    String? accessToken,
+  }) async {
+    const String url = 'https://graphql.anilist.co';
+
+    const String mutation = r'''
+      mutation($mediaId: Int, $status: MediaListStatus, $progress: Int, $score: Float) {
+        SaveMediaListEntry(mediaId: $mediaId, status: $status, progress: $progress, score: $score) {
+          id
+          status
+          progress
+          score
+        }
+      }
+    ''';
+
+    final Map<String, dynamic> variables = {
+      'mediaId': mediaId,
+      if (status != null) 'status': status,
+      if (progress != null) 'progress': progress,
+      if (score != null) 'score': score,
+    };
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({'query': mutation, 'variables': variables}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['errors'] != null) {
+        print('AniList API Error: ${data['errors']}');
+      } else {
+        print('Tracking updated: ${data['data']['SaveMediaListEntry']}');
+      }
+    } else {
+      print('HTTP Error ${response.statusCode}: ${response.body}');
+    }
+  }
 }

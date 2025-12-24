@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:metia/data/extensions/extension_runtime_manager.dart';
 import 'package:metia/data/extensions/extension_services.dart';
 import 'package:metia/data/isar_services/isar_services.dart';
@@ -12,6 +13,7 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   //never delet this, it should be the first thing to run after "WidgetsFlutterBinding.ensureInitialized();"
   await IsarServices.setup();
   await UserData.initialize();

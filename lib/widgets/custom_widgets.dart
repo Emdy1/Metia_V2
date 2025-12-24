@@ -344,7 +344,7 @@ class _SeenCheckIcon extends StatelessWidget {
         height: 100,
         width: 177.78,
         child: Center(
-          child: Icon(Icons.check_circle, size: 60, color: Colors.white70),
+          child: Icon(Icons.check, size: 60, color: Colors.white70),
         ),
       ),
     );

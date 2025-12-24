@@ -11,8 +11,10 @@ import 'package:metia/models/anime_database.dart';
 import 'package:metia/models/anime_database_service.dart';
 import 'package:metia/models/episode_data_service.dart';
 import 'package:metia/models/episode_database.dart';
+import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/extensions_page.dart';
+import 'package:metia/screens/player_page.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:metia/widgets/custom_tab.dart';
 import 'package:metia/widgets/custom_widgets.dart';
@@ -61,6 +63,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   bool isGettingEpisodes = false;
 
   late TabController _tabController;
+
+  //this is garbage but i got no other solution
+  int progress = 0;
 
   @override
   void initState() {
@@ -295,11 +300,15 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     });
   }
 
-  void watchAnime(String url) {
+  void seetState() {
+    setState(() {});
+  }
+
+  void watchAnime(String url) async {
     bool isLoading = true;
     List<StreamingData> streamingDatas = [];
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -378,27 +387,31 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                         //watch button
                                         IconButton(
                                           onPressed: () async {
-                                            // Navigator.of(
-                                            //   contextt,
-                                            // ).pop("setState");
-                                            // final result = await Navigator.push(
-                                            //   context,
-                                            //   MaterialPageRoute(
-                                            //     builder: (context) => PlayerPage(
-                                            //       episodeList: episodeList,
-                                            //       currentExtension:
-                                            //           currentExtension,
-                                            //       episodeCount:
-                                            //           episodeList.length,
-                                            //       extensionEpisodeData:
-                                            //           episodeList[episodeIndex],
-                                            //       episodeNumber: episodeIndex + 1,
-                                            //       extensionStreamData:
-                                            //           snapshot.data?[index],
-                                            //       anilistData: animeData,
-                                            //     ),
-                                            //   ),
-                                            // );
+                                            // Navigator.of(context).pop();
+                                            await Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PlayerPage(
+                                                      episodeList: episodeList,
+                                                      animeStreamingData:
+                                                          streamingData,
+                                                      mediaListEntry:
+                                                          widget.anime,
+                                                      animeData: matchedAnime!,
+                                                      episodeData: episodeList
+                                                          .where(
+                                                            (element) =>
+                                                                element.url ==
+                                                                url,
+                                                          )
+                                                          .first,
+                                                    ),
+                                              ),
+                                            );
+                                            seetState();
+
+                                            // Navigator.pop(context);
                                             // if (result == "setState") {
                                             //   onDone();
                                             // }
@@ -423,6 +436,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
         );
       },
     );
+    setState(() {});
   }
 
   void correctMatchedAnime(String keyword) {
@@ -628,6 +642,22 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     currentExtensions = runtime.extensionServices.currentExtensions;
+
+    List<MediaListGroup> userLIb = Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).user.userLibrary.library;
+    for (var group in userLIb) {
+      if (group.entries
+              .where((element) => element.media.id == widget.anime.media.id)
+              .length >
+          0) {
+        progress = group.entries
+            .where((element) => element.media.id == widget.anime.media.id)
+            .first
+            .progress!;
+      }
+    }
     return Scaffold(
       body: NestedScrollView(
         controller: scrollController,
@@ -701,6 +731,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 8),
                   itemBuilder: (context, index) {
+                    bool seen = false;
                     int episodeIndex = startIndex + index;
 
                     // OPTIMIZATION: Use the new optimized widget
@@ -709,8 +740,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       index: episodeIndex,
                       animeId: widget.anime.media.id,
                       extensionId: runtime.extensionServices.mainExtension!.id,
-                      current: (widget.anime.progress ?? 0) == episodeIndex,
-                      seen: (widget.anime.progress ?? 0) > episodeIndex,
+                      current: (progress ?? 0) == episodeIndex,
+                      //seen: true,
+                      seen: (progress ?? 0) > episodeIndex,
                       episode: episodeList[episodeIndex],
                       title: matchedAnime!.name,
                       scheme: scheme,
@@ -1146,7 +1178,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     Padding(
                       padding: const EdgeInsets.only(top: 4.0),
                       child: GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           if (runtime.extensionServices.mainExtension == null ||
                               runtime
                                   .extensionServices
@@ -1175,7 +1207,12 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                     widget.anime.media.title.native
                               : "";
 
-                          correctMatchedAnime(title!);
+                          //correctMatchedAnime(title!);
+                          await Provider.of<UserProvider>(
+                            context,
+                            listen: false,
+                          ).reloadUserData();
+                          setState(() {});
                         },
                         child: Text(
                           "Wrong?",

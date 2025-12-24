@@ -56,12 +56,12 @@ class EpisodeDataService extends ChangeNotifier {
 
   /// modify progress of an espiode data
   Future<void> updateEpisodeProgress({
-    required int isarEpisodeId,
+    EpisodeData? episode,
     double? progress,
     double? total,
   }) async {
     await db.writeTxn(() async {
-      final episode = await db.episodeDatas.get(isarEpisodeId);
+      //final episode = await db.episodeDatas.get(isarEpisodeId);
       if (episode == null) return;
 
       if (progress != null) {
