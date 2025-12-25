@@ -42,27 +42,20 @@ class Media {
   static Color? _parseColor(String? hexColor) {
     if (hexColor == null || hexColor.isEmpty) return null;
     hexColor = hexColor.replaceAll('#', '');
-    if (hexColor.length == 6)
-      hexColor = 'FF$hexColor'; // Add opacity if missing
+    if (hexColor.length == 6) hexColor = 'FF$hexColor'; // Add opacity if missing
     return Color(int.parse('0x$hexColor'));
   }
 
   factory Media.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
-      return Media(
-        id: 0,
-        title: Title.fromJson({}),
-        coverImage: CoverImage.fromJson({}),
-      );
+      return Media(id: 0, title: Title.fromJson({}), coverImage: CoverImage.fromJson({}));
     }
 
     return Media(
       id: json['id'] ?? 0,
       title: Title.fromJson(json['title'] ?? {}),
       description: json['description'],
-      genres: (json['genres'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList(),
+      genres: (json['genres'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
       episodes: json['episodes'],
       averageScore: json['averageScore'],
       season: json['season'],
@@ -92,11 +85,7 @@ class Title {
     if (json == null) {
       return Title();
     }
-    return Title(
-      romaji: json['romaji'],
-      english: json['english'],
-      native: json['native'],
-    );
+    return Title(romaji: json['romaji'] ?? "", english: json['english'] ?? "", native: json['native'] ?? "");
   }
 }
 
@@ -105,21 +94,13 @@ class CoverImage {
   final String extraLarge;
   final String medium;
 
-  CoverImage({
-    required this.large,
-    required this.extraLarge,
-    required this.medium,
-  });
+  CoverImage({required this.large, required this.extraLarge, required this.medium});
 
   factory CoverImage.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
       return CoverImage(large: '', extraLarge: '', medium: '');
     }
-    return CoverImage(
-      large: json['large'] ?? '',
-      extraLarge: json['extraLarge'] ?? '',
-      medium: json['medium'] ?? '',
-    );
+    return CoverImage(large: json['large'] ?? '', extraLarge: json['extraLarge'] ?? '', medium: json['medium'] ?? '');
   }
 }
 
@@ -133,10 +114,7 @@ class NextAiringEpisode {
     if (json == null) {
       return NextAiringEpisode(airingAt: 0, episode: 0);
     }
-    return NextAiringEpisode(
-      airingAt: json['airingAt'] ?? 0,
-      episode: json['episode'] ?? 0,
-    );
+    return NextAiringEpisode(airingAt: json['airingAt'] ?? 0, episode: json['episode'] ?? 0);
   }
 }
 
@@ -157,13 +135,7 @@ class PageInfo {
 
   factory PageInfo.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
-      return PageInfo(
-        total: 0,
-        perPage: 0,
-        currentPage: 1,
-        lastPage: 1,
-        hasNextPage: false,
-      );
+      return PageInfo(total: 0, perPage: 0, currentPage: 1, lastPage: 1, hasNextPage: false);
     }
     return PageInfo(
       total: json['total'] ?? 0,
@@ -194,14 +166,7 @@ class UserActivity {
 
   factory UserActivity.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
-      return UserActivity(
-        type: '',
-        status: '',
-        progress: '',
-        likeCount: 0,
-        createdAt: 0,
-        media: Media.fromJson({}),
-      );
+      return UserActivity(type: '', status: '', progress: '', likeCount: 0, createdAt: 0, media: Media.fromJson({}));
     }
     return UserActivity(
       type: json['type'] ?? '',

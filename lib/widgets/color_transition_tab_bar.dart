@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
 
-class ColorTransitionTabBar extends StatefulWidget
-    implements PreferredSizeWidget {
+class ColorTransitionTabBar extends StatefulWidget implements PreferredSizeWidget {
   final List<String> tabs;
   final TabController controller;
   final List<Color> tabColors;
 
-  const ColorTransitionTabBar({
-    super.key,
-    required this.tabs,
-    required this.controller,
-    required this.tabColors,
-  });
+  const ColorTransitionTabBar({super.key, required this.tabs, required this.controller, required this.tabColors});
 
   @override
   Size get preferredSize => const Size.fromHeight(48);
@@ -35,18 +29,11 @@ class _ColorTransitionTabBarState extends State<ColorTransitionTabBar> {
       animation: animation,
       builder: (context, child) {
         final double value = animation.value;
-        final int fromIndex = value.floor().clamp(
-          0,
-          widget.tabColors.length - 1,
-        );
+        final int fromIndex = value.floor().clamp(0, widget.tabColors.length - 1);
         final int toIndex = value.ceil().clamp(0, widget.tabColors.length - 1);
         final double t = value - fromIndex;
 
-        final Color indicatorColor = Color.lerp(
-          widget.tabColors[fromIndex],
-          widget.tabColors[toIndex],
-          t,
-        )!;
+        final Color indicatorColor = Color.lerp(widget.tabColors[fromIndex], widget.tabColors[toIndex], t)!;
 
         return _buildTabBar(indicatorColor);
       },
@@ -70,11 +57,7 @@ class _ColorTransitionTabBarState extends State<ColorTransitionTabBar> {
         return Tab(
           child: Text(
             label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: widget.tabColors[index],
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: widget.tabColors[index]),
           ),
         );
       }).toList(),

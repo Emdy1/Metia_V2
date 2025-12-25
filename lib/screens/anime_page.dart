@@ -11,6 +11,8 @@ import 'package:metia/models/anime_database.dart';
 import 'package:metia/models/anime_database_service.dart';
 import 'package:metia/models/episode_data_service.dart';
 import 'package:metia/models/episode_database.dart';
+import 'package:metia/models/episode_history_instance.dart';
+import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/extensions_page.dart';
@@ -38,12 +40,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
   bool get isAppBarExpanded {
     return scrollController.hasClients &&
-        scrollController.offset >
-            (MediaQuery.of(context).size.height * 0.5) - kToolbarHeight - 30;
+        scrollController.offset > (MediaQuery.of(context).size.height * 0.5) - kToolbarHeight - 30;
   }
 
-  ColorScheme get scheme =>
-      Provider.of<ThemeProvider>(context, listen: false).scheme;
+  ColorScheme get scheme => Provider.of<ThemeProvider>(context, listen: false).scheme;
 
   int selectedTabIndex = 0;
 
@@ -84,8 +84,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     //TO UPDATE THE STATE OF THE PROGRESSESION OF EACH EXTENSION!!!
     runtime.extensionServices.addListener(_onExtensionChange);
 
-    if (runtime.extensionServices.mainExtension != null)
-      startFindingAnimeMatchAlgorithm();
+    if (runtime.extensionServices.mainExtension != null) startFindingAnimeMatchAlgorithm();
   }
 
   void _animeDbListener() {
@@ -152,23 +151,15 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   }
 
   void startFindingAnimeMatchAlgorithm() async {
-    if (animeDatabaseService.existsInDatabse(
-      widget.anime.media.id,
-      runtime.extensionServices.mainExtension!.id,
-    )) {
+    if (animeDatabaseService.existsInDatabse(widget.anime.media.id, runtime.extensionServices.mainExtension!.id)) {
       matchedAnime = animeDatabaseService
-          .getAnimeDataOf(
-            widget.anime.media.id,
-            runtime.extensionServices.mainExtension!.id,
-          )!
+          .getAnimeDataOf(widget.anime.media.id, runtime.extensionServices.mainExtension!.id)!
           .matchedAnime;
       isGettingEpisodes = true;
       startGettingAnimeEpisodes();
       //await prefs.setString(key, jsonEncode(bestMatch));
 
-      print(
-        "INFO: found this title \"${matchedAnime!.name}\" to be the best match ",
-      );
+      print("INFO: found this title \"${matchedAnime!.name}\" to be the best match ");
 
       setState(() {
         //foundTitle = clossestAnime == null ? " " : clossestAnime["title"];
@@ -185,19 +176,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       return;
     }
 
-    final title =
-        runtime.extensionServices.mainExtension?.anilistPreferedTitle!
-                .toLowerCase() ==
-            "english"
-        ? widget.anime.media.title.english ??
-              widget.anime.media.title.romaji ??
-              widget.anime.media.title.native
-        : runtime.extensionServices.mainExtension?.anilistPreferedTitle!
-                  .toLowerCase() ==
-              "romaji"
-        ? widget.anime.media.title.romaji ??
-              widget.anime.media.title.english ??
-              widget.anime.media.title.native
+    final title = runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "english"
+        ? widget.anime.media.title.english ?? widget.anime.media.title.romaji ?? widget.anime.media.title.native
+        : runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "romaji"
+        ? widget.anime.media.title.romaji ?? widget.anime.media.title.english ?? widget.anime.media.title.native
         : "";
 
     if (title == "") {
@@ -291,9 +273,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     startGettingAnimeEpisodes();
     //await prefs.setString(key, jsonEncode(bestMatch));
 
-    print(
-      "INFO: found this title \"${matchedAnime!.name}\" to be the best match ",
-    );
+    print("INFO: found this title \"${matchedAnime!.name}\" to be the best match ");
 
     setState(() {
       //foundTitle = clossestAnime == null ? " " : clossestAnime["title"];
@@ -304,7 +284,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     setState(() {});
   }
 
-  void watchAnime(String url) async {
+  void watchAnime(String url, MetiaEpisode episode, int episodeIndex, String animeTitle) async {
     bool isLoading = true;
     List<StreamingData> streamingDatas = [];
 
@@ -326,9 +306,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
             return Padding(
               padding: EdgeInsetsGeometry.all(16),
               child: isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(color: scheme.tertiary),
-                    )
+                  ? Center(child: CircularProgressIndicator(color: scheme.tertiary))
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       spacing: 16,
@@ -343,8 +321,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         ),
                         Expanded(
                           child: ListView.separated(
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 12),
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemCount: streamingDatas.length,
                             itemBuilder: (context, index) {
                               final streamingData = streamingDatas[index];
@@ -355,14 +332,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                 ),
                                 width: double.infinity,
                                 height: 60,
-                                padding: const EdgeInsets.only(
-                                  right: 12,
-                                  left: 12,
-                                ),
+                                padding: const EdgeInsets.only(right: 12, left: 12),
 
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
@@ -388,25 +361,19 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                         IconButton(
                                           onPressed: () async {
                                             // Navigator.of(context).pop();
+
+                                            
+
                                             await Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) =>
-                                                    PlayerPage(
-                                                      episodeList: episodeList,
-                                                      animeStreamingData:
-                                                          streamingData,
-                                                      mediaListEntry:
-                                                          widget.anime,
-                                                      animeData: matchedAnime!,
-                                                      episodeData: episodeList
-                                                          .where(
-                                                            (element) =>
-                                                                element.url ==
-                                                                url,
-                                                          )
-                                                          .first,
-                                                    ),
+                                                builder: (context) => PlayerPage(
+                                                  episodeList: episodeList,
+                                                  animeStreamingData: streamingData,
+                                                  mediaListEntry: widget.anime,
+                                                  animeData: matchedAnime!,
+                                                  episodeData: episodeList.where((element) => element.url == url).first,
+                                                ),
                                               ),
                                             );
                                             seetState();
@@ -442,9 +409,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   void correctMatchedAnime(String keyword) {
     List<MetiaAnime> animes = [];
     bool isLoading = true;
-    final TextEditingController searchController = TextEditingController(
-      text: keyword,
-    );
+    final TextEditingController searchController = TextEditingController(text: keyword);
     bool hasFetched = false; // run initial fetch once
 
     showModalBottomSheet(
@@ -478,12 +443,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 }
 
                 return Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    MediaQuery.of(context).viewInsets.bottom + 16,
-                  ),
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -493,9 +453,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         decoration: InputDecoration(
                           labelText: 'Search Anime',
                           hintText: 'Enter anime name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onSubmitted: (value) {
                           if (value.trim().isNotEmpty) {
@@ -506,22 +464,16 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       const SizedBox(height: 12),
                       Expanded(
                         child: isLoading
-                            ? Center(
-                                child: CircularProgressIndicator(
-                                  color: Theme.of(context).colorScheme.tertiary,
-                                ),
-                              )
+                            ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.tertiary))
                             : GridView.builder(
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount:
-                                          Tools.getResponsiveCrossAxisVal(
-                                            boxConstraints.maxWidth,
-                                            itemWidth: 135,
-                                          ),
-                                      mainAxisExtent: 268,
-                                      childAspectRatio: 0.7,
-                                    ),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: Tools.getResponsiveCrossAxisVal(
+                                    boxConstraints.maxWidth,
+                                    itemWidth: 135,
+                                  ),
+                                  mainAxisExtent: 268,
+                                  childAspectRatio: 0.7,
+                                ),
                                 itemCount: animes.length,
                                 itemBuilder: (context, index) {
                                   final poster = animes[index].poster;
@@ -529,15 +481,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
                                   return GestureDetector(
                                     onTap: () async {
-                                      await animeDatabaseService
-                                          .updateAnimeDatabases(
-                                            animes[index],
-                                            widget.anime.media.id,
-                                            runtime
-                                                .extensionServices
-                                                .mainExtension!
-                                                .id,
-                                          );
+                                      await animeDatabaseService.updateAnimeDatabases(
+                                        animes[index],
+                                        widget.anime.media.id,
+                                        runtime.extensionServices.mainExtension!.id,
+                                      );
                                       Navigator.of(context).pop();
                                     },
                                     child: Card(
@@ -548,39 +496,20 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                             child: SizedBox(
                                               width: 135,
                                               child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
+                                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                                 children: [
                                                   SizedBox(
                                                     height: 183,
                                                     width: 135,
                                                     child: ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
+                                                      borderRadius: BorderRadius.circular(12),
                                                       child: CachedNetworkImage(
                                                         imageUrl: poster,
                                                         fit: BoxFit.cover,
-                                                        placeholder:
-                                                            (
-                                                              context,
-                                                              url,
-                                                            ) => const Center(
-                                                              child:
-                                                                  CircularProgressIndicator(
-                                                                    strokeWidth:
-                                                                        2,
-                                                                  ),
-                                                            ),
-                                                        errorWidget:
-                                                            (
-                                                              context,
-                                                              url,
-                                                              error,
-                                                            ) => const Icon(
-                                                              Icons.error,
-                                                            ),
+                                                        placeholder: (context, url) => const Center(
+                                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                                        ),
+                                                        errorWidget: (context, url, error) => const Icon(Icons.error),
                                                       ),
                                                     ),
                                                   ),
@@ -589,23 +518,14 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                                     child: Center(
                                                       child: Text(
                                                         name,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                        overflow: TextOverflow.ellipsis,
                                                         maxLines: 2,
                                                         style: TextStyle(
-                                                          color: Theme.of(
-                                                            context,
-                                                          ).colorScheme.primary,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodyLarge!
-                                                                  .fontSize,
+                                                          color: Theme.of(context).colorScheme.primary,
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
                                                         ),
-                                                        textAlign:
-                                                            TextAlign.center,
+                                                        textAlign: TextAlign.center,
                                                       ),
                                                     ),
                                                   ),
@@ -643,28 +563,16 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     currentExtensions = runtime.extensionServices.currentExtensions;
 
-    List<MediaListGroup> userLIb = Provider.of<UserProvider>(
-      context,
-      listen: false,
-    ).user.userLibrary.library;
+    List<MediaListGroup> userLIb = Provider.of<UserProvider>(context, listen: false).user.userLibrary.library;
     for (var group in userLIb) {
-      if (group.entries
-              .where((element) => element.media.id == widget.anime.media.id)
-              .length >
-          0) {
-        progress = group.entries
-            .where((element) => element.media.id == widget.anime.media.id)
-            .first
-            .progress!;
+      if (group.entries.where((element) => element.media.id == widget.anime.media.id).length > 0) {
+        progress = group.entries.where((element) => element.media.id == widget.anime.media.id).first.progress!;
       }
     }
     return Scaffold(
       body: NestedScrollView(
         controller: scrollController,
-        headerSliverBuilder: (nestedContext, innerBoxIsScrolled) => [
-          buildAnimeInfo(),
-          buildExtensionInfo(),
-        ],
+        headerSliverBuilder: (nestedContext, innerBoxIsScrolled) => [buildAnimeInfo(), buildExtensionInfo()],
         body: buildBody(),
       ),
     );
@@ -678,16 +586,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
         Text(
           text,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: scheme.tertiary,
-            fontSize: 30,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: scheme.tertiary, fontSize: 30, fontWeight: FontWeight.w600),
         ),
         SizedBox(height: 20),
-        activeProgression
-            ? CircularProgressIndicator(color: scheme.tertiary)
-            : Container(),
+        activeProgression ? CircularProgressIndicator(color: scheme.tertiary) : Container(),
       ],
     );
   }
@@ -696,16 +598,13 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     return TabBarView(
       controller: _tabController,
       children: List.generate(tabCount, (tabIndex) {
-        bool isLandscape =
-            MediaQuery.orientationOf(context) == Orientation.landscape;
+        bool isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
         EdgeInsetsGeometry padding = EdgeInsets.only(
           left: (isLandscape ? 20 : 0) + 12,
           right: (isLandscape ? 20 : 0) + 12,
         );
         int count = tabItemCounts[tabIndex];
-        int startIndex = (tabIndex == 0)
-            ? 0
-            : firstTabCount + (tabIndex - 1) * eachItemForTab;
+        int startIndex = (tabIndex == 0) ? 0 : firstTabCount + (tabIndex - 1) * eachItemForTab;
 
         return count == 0
             ? Center(
@@ -714,11 +613,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   child: Text(
                     "",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: scheme.tertiary,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(color: scheme.tertiary, fontSize: 30, fontWeight: FontWeight.w600),
                   ),
                 ),
               )
@@ -728,8 +623,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   // OPTIMIZATION: Add itemExtent for better performance
                   //itemExtent: 116, // 108 + 8 separator
                   //cacheExtent: 500, // Preload nearby items
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 8),
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     bool seen = false;
                     int episodeIndex = startIndex + index;
@@ -741,12 +635,15 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       animeId: widget.anime.media.id,
                       extensionId: runtime.extensionServices.mainExtension!.id,
                       current: (progress ?? 0) == episodeIndex,
-                      //seen: true,
                       seen: (progress ?? 0) > episodeIndex,
                       episode: episodeList[episodeIndex],
-                      title: matchedAnime!.name,
-                      scheme: scheme,
-                      onTap: () => watchAnime(episodeList[episodeIndex].url),
+                      animeTitle: matchedAnime!.name,
+                      onTap: () => watchAnime(
+                        episodeList[episodeIndex].url,
+                        episodeList[episodeIndex],
+                        episodeIndex,
+                        matchedAnime!.name,
+                      ),
                     );
                   },
                   itemCount: count,
@@ -768,21 +665,13 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     } else if (isGettingEpisodes) {
       body = buildStatus("Getting Anime Episodes...", true);
     } else {
-      body = episodeList.isEmpty
-          ? buildStatus("Anime Has \nNo Episodes Yet!", false)
-          : buildEpisodeList();
+      body = episodeList.isEmpty ? buildStatus("Anime Has \nNo Episodes Yet!", false) : buildEpisodeList();
     }
 
     return body;
   }
 
-  Widget buildAnimeEpisode(
-    int index,
-    bool current,
-    bool seen,
-    MetiaEpisode episode,
-    String title,
-  ) {
+  Widget buildAnimeEpisode(int index, bool current, bool seen, MetiaEpisode episode, String title) {
     final episodeDataService = context.watch<EpisodeDataService>();
 
     bool hasEpisodeData =
@@ -817,7 +706,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
     return GestureDetector(
       onTapUp: (_) {
-        watchAnime(episodeList[index].url);
+        watchAnime(episodeList[index].url, episode, index, matchedAnime!.name);
       },
       child: Container(
         width: double.infinity,
@@ -889,15 +778,12 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     title,
                                     style: TextStyle(
-                                      color: current
-                                          ? currentTextColor
-                                          : secondaryTextColor,
+                                      color: current ? currentTextColor : secondaryTextColor,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -908,9 +794,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: current
-                                          ? currentTextColor
-                                          : normalTextColor,
+                                      color: current ? currentTextColor : normalTextColor,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -924,9 +808,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                         ? "Dub"
                                         : "not specified",
                                     style: TextStyle(
-                                      color: current
-                                          ? currentTextColor.withOpacity(0.8)
-                                          : secondaryTextColor,
+                                      color: current ? currentTextColor.withOpacity(0.8) : secondaryTextColor,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -950,9 +832,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 child: SizedBox(
                   height: 100,
                   width: 177.78,
-                  child: Center(
-                    child: Icon(Icons.check, size: 60, color: Colors.white),
-                  ),
+                  child: Center(child: Icon(Icons.check, size: 60, color: Colors.white)),
                 ),
               ),
 
@@ -1001,19 +881,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           padding: EdgeInsets.symmetric(
-            horizontal:
-                MediaQuery.of(context).orientation == Orientation.landscape
-                ? 23
-                : 0,
+            horizontal: MediaQuery.of(context).orientation == Orientation.landscape ? 23 : 0,
           ),
           color: scheme.background,
           child: Padding(
-            padding: const EdgeInsets.only(
-              top: 12,
-              left: 12,
-              right: 12,
-              bottom: 12,
-            ),
+            padding: const EdgeInsets.only(top: 12, left: 12, right: 12, bottom: 12),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               //spacing: 5,
@@ -1023,25 +895,18 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   spacing: 10,
                   children: [
                     Theme(
-                      data: Theme.of(context).copyWith(
-                        splashColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                      ),
+                      data: Theme.of(
+                        context,
+                      ).copyWith(splashColor: Colors.transparent, highlightColor: Colors.transparent),
                       child: PopupMenuButton<String>(
                         tooltip: "Select Extension",
                         onSelected: (String id) async {
                           if (id == "no_extension") {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => ExtensionsPage(),
-                              ),
-                            );
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => ExtensionsPage()));
                             return;
                           }
                           await runtime.extensionServices.setMainExtension(
-                            currentExtensions!
-                                .where((e) => e.id == int.parse(id))
-                                .first,
+                            currentExtensions!.where((e) => e.id == int.parse(id)).first,
                           );
                         },
                         itemBuilder: (BuildContext context) {
@@ -1055,27 +920,15 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                           width: 24,
                                           height: 24,
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                            child: CachedNetworkImage(
-                                              imageUrl: e.iconUrl!,
-                                              fit: BoxFit.contain,
-                                            ),
+                                            borderRadius: BorderRadius.circular(4),
+                                            child: CachedNetworkImage(imageUrl: e.iconUrl!, fit: BoxFit.contain),
                                           ),
                                         ),
                                         const SizedBox(width: 10),
                                         Expanded(
-                                          child: Text(
-                                            e.name!,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
+                                          child: Text(e.name!, style: const TextStyle(fontWeight: FontWeight.w600)),
                                         ),
-                                        e.isMain
-                                            ? Icon(Icons.check, size: 18)
-                                            : Container(),
+                                        e.isMain ? Icon(Icons.check, size: 18) : Container(),
                                       ],
                                     ),
                                   );
@@ -1085,17 +938,12 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                     value: "no_extension",
                                     child: Row(
                                       children: [
-                                        Icon(
-                                          Icons.extension,
-                                          color: scheme.primary,
-                                        ),
+                                        Icon(Icons.extension, color: scheme.primary),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
                                             "No Extension Installed!",
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                            style: const TextStyle(fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                       ],
@@ -1110,25 +958,15 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                               height: 32,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
-                                child:
-                                    runtime.extensionServices.mainExtension ==
-                                        null
-                                    ? Icon(
-                                        Icons.extension,
-                                        color: scheme.primary,
-                                      )
+                                child: runtime.extensionServices.mainExtension == null
+                                    ? Icon(Icons.extension, color: scheme.primary)
                                     : SizedBox(
                                         width: 24,
                                         height: 24,
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
+                                          borderRadius: BorderRadius.circular(4),
                                           child: CachedNetworkImage(
-                                            imageUrl: runtime
-                                                .extensionServices
-                                                .mainExtension!
-                                                .iconUrl!,
+                                            imageUrl: runtime.extensionServices.mainExtension!.iconUrl!,
                                             fit: BoxFit.contain,
                                           ),
                                         ),
@@ -1144,11 +982,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       padding: EdgeInsets.only(top: 4.0),
                       child: Text(
                         "Found:",
-                        style: TextStyle(
-                          color: scheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w500),
                       ),
                     ),
                     Expanded(
@@ -1159,19 +993,12 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                               ? matchedAnime != null
                                     ? matchedAnime!.name
                                     : "Searching..."
-                              : runtime
-                                    .extensionServices
-                                    .currentExtensions
-                                    .isEmpty
+                              : runtime.extensionServices.currentExtensions.isEmpty
                               ? "No Extension Installed!"
                               : "No Extension Selceted!",
                           overflow: TextOverflow.ellipsis,
                           maxLines: 2,
-                          style: TextStyle(
-                            color: scheme.tertiary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: TextStyle(color: scheme.tertiary, fontSize: 16, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ),
@@ -1180,50 +1007,30 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       child: GestureDetector(
                         onTap: () async {
                           if (runtime.extensionServices.mainExtension == null ||
-                              runtime
-                                  .extensionServices
-                                  .currentExtensions
-                                  .isEmpty)
+                              runtime.extensionServices.currentExtensions.isEmpty)
                             return;
 
                           final title =
-                              runtime
-                                      .extensionServices
-                                      .mainExtension
-                                      ?.anilistPreferedTitle!
-                                      .toLowerCase() ==
-                                  "english"
+                              runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "english"
                               ? widget.anime.media.title.english ??
                                     widget.anime.media.title.romaji ??
                                     widget.anime.media.title.native
-                              : runtime
-                                        .extensionServices
-                                        .mainExtension
-                                        ?.anilistPreferedTitle!
-                                        .toLowerCase() ==
-                                    "romaji"
+                              : runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "romaji"
                               ? widget.anime.media.title.romaji ??
                                     widget.anime.media.title.english ??
                                     widget.anime.media.title.native
                               : "";
 
                           //correctMatchedAnime(title!);
-                          await Provider.of<UserProvider>(
-                            context,
-                            listen: false,
-                          ).reloadUserData();
+                          await Provider.of<UserProvider>(context, listen: false).reloadUserData();
                           setState(() {});
                         },
                         child: Text(
                           "Wrong?",
                           style: TextStyle(
                             color:
-                                runtime.extensionServices.mainExtension ==
-                                        null ||
-                                    runtime
-                                        .extensionServices
-                                        .currentExtensions
-                                        .isEmpty
+                                runtime.extensionServices.mainExtension == null ||
+                                    runtime.extensionServices.currentExtensions.isEmpty
                                 ? scheme.onSurface.withOpacity(0.38)
                                 : scheme.primary,
                             fontSize: 16,
@@ -1242,20 +1049,14 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     style: TextButton.styleFrom(
                       foregroundColor:
                           runtime.extensionServices.mainExtension == null ||
-                              runtime
-                                  .extensionServices
-                                  .currentExtensions
-                                  .isEmpty
+                              runtime.extensionServices.currentExtensions.isEmpty
                           ? scheme.onSurfaceVariant.withOpacity(0.38)
                           : scheme.primaryFixedDim,
                       shape: RoundedRectangleBorder(
                         side: BorderSide(
                           color:
                               runtime.extensionServices.mainExtension == null ||
-                                  runtime
-                                      .extensionServices
-                                      .currentExtensions
-                                      .isEmpty
+                                  runtime.extensionServices.currentExtensions.isEmpty
                               ? scheme.onSurfaceVariant.withOpacity(0.38)
                               : scheme.primaryFixedDim,
                         ),
@@ -1271,18 +1072,13 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       style: TextStyle(
                         color:
                             runtime.extensionServices.mainExtension == null ||
-                                runtime
-                                    .extensionServices
-                                    .currentExtensions
-                                    .isEmpty
+                                runtime.extensionServices.currentExtensions.isEmpty
                             ? scheme.onSurfaceVariant.withOpacity(0.38)
                             : scheme.primaryFixedDim,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    icon:
-                        widget.anime.media.episodes != null &&
-                            widget.anime.media.episodes != widget.anime.progress
+                    icon: widget.anime.media.episodes != null && widget.anime.media.episodes != widget.anime.progress
                         ? const Icon(Icons.play_arrow_outlined, size: 20)
                         : const SizedBox(),
                     onPressed: () async {
@@ -1292,6 +1088,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                       }
                       watchAnime(
                         episodeList[widget.anime.progress ?? 0].url,
+                        episodeList[widget.anime.progress ?? 0],
+                        widget.anime.progress ?? 0,
+                        matchedAnime!.name,
                       ); // i used ?? 0 to guard against referencing a null progress if the user has never watched that anime
                     },
                   ),
@@ -1311,12 +1110,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         safeSetState(() {});
                       },
                       tabs: List.generate(labels.length, (i) {
-                        return CustomTab(
-                          controller: _tabController,
-                          scheme: scheme,
-                          label: labels[i],
-                          index: i,
-                        );
+                        return CustomTab(controller: _tabController, scheme: scheme, label: labels[i], index: i);
                       }),
                     );
                   },
@@ -1391,12 +1185,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.center,
-                  colors: [
-                    Provider.of<ThemeProvider>(
-                      context,
-                    ).scheme.background.withOpacity(0.8),
-                    Colors.transparent,
-                  ],
+                  colors: [Provider.of<ThemeProvider>(context).scheme.background.withOpacity(0.8), Colors.transparent],
                   stops: const [0, 0.4], // control where each color stops
                 ),
               ),
@@ -1427,10 +1216,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         }
                         final int airingAt = nextAiring.airingAt ?? 0;
                         final int episode = nextAiring.episode ?? 0;
-                        final Duration diff =
-                            DateTime.fromMillisecondsSinceEpoch(
-                              airingAt * 1000,
-                            ).difference(DateTime.now());
+                        final Duration diff = DateTime.fromMillisecondsSinceEpoch(
+                          airingAt * 1000,
+                        ).difference(DateTime.now());
                         if (diff.isNegative) return const SizedBox();
 
                         final int days = diff.inDays;
@@ -1447,12 +1235,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.schedule,
-                                color: scheme.primary,
-
-                                size: 22,
-                              ),
+                              Icon(Icons.schedule, color: scheme.primary, size: 22),
                               Text(
                                 ' Episode $episode: $timeString',
                                 style: TextStyle(
@@ -1472,19 +1255,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 Align(
                   alignment: Alignment.bottomLeft,
                   child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16.0,
-                      bottom: 16.0,
-                      right: 16.0,
-                    ),
+                    padding: const EdgeInsets.only(left: 16.0, bottom: 16.0, right: 16.0),
                     child: SingleChildScrollView(
                       physics: const NeverScrollableScrollPhysics(),
                       padding: EdgeInsets.symmetric(
-                        horizontal:
-                            MediaQuery.orientationOf(context) ==
-                                Orientation.landscape
-                            ? 20
-                            : 0,
+                        horizontal: MediaQuery.orientationOf(context) == Orientation.landscape ? 20 : 0,
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -1494,8 +1269,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                           Text(
                             widget.anime.media.title.english ?? "No Title",
                             style: TextStyle(
-                              color: scheme
-                                  .onBackground, // instead of Colors.white
+                              color: scheme.onBackground, // instead of Colors.white
                               fontSize: 36,
                               fontWeight: FontWeight.w400,
                             ),
@@ -1527,11 +1301,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                   color: scheme.tertiary, // highlight
                                 ),
                               ),
-                              Icon(
-                                Icons.star,
-                                color: scheme.tertiary,
-                                size: 18,
-                              ),
+                              Icon(Icons.star, color: scheme.tertiary, size: 18),
                             ],
                           ),
                           const SizedBox(height: 2),
@@ -1540,8 +1310,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                           Text(
                             "Synopsis",
                             style: TextStyle(
-                              color: scheme
-                                  .onBackground, // instead of Colors.white
+                              color: scheme.onBackground, // instead of Colors.white
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1550,11 +1319,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
                           // Description
                           Text(
-                            widget.anime.media.description?.replaceAll(
-                                  RegExp(r'<[^>]*>'),
-                                  '',
-                                ) ??
-                                "",
+                            widget.anime.media.description?.replaceAll(RegExp(r'<[^>]*>'), '') ?? "",
                             maxLines: 8,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -1573,10 +1338,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
             ),
           ],
         ),
-        stretchModes: const [
-          StretchMode.blurBackground,
-          StretchMode.zoomBackground,
-        ],
+        stretchModes: const [StretchMode.blurBackground, StretchMode.zoomBackground],
       ),
     );
   }

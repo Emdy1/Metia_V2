@@ -10,6 +10,7 @@ import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/extensions_page.dart';
 import 'package:metia/screens/home/explorer_page.dart';
+import 'package:metia/screens/home/history_page.dart';
 import 'package:metia/screens/home/library_page.dart';
 import 'package:metia/screens/home/profile_page.dart';
 import 'package:http/http.dart' as http;
@@ -36,15 +37,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     context.read<ExtensionServices>().getExtensions();
     _tabController = TabController(
       length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn)
-          ? 3
-          : 2,
+          ? 4
+          : 3,
       vsync: this,
     );
     Provider.of<UserProvider>(context, listen: false).addListener(() {
       _tabController = TabController(
         length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn)
-            ? 3
-            : 2,
+            ? 4
+            : 3,
         vsync: this,
       );
     });
@@ -181,6 +182,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     label: Text('Explore'),
                   ),
                   NavigationRailDestination(
+                    icon: Icon(Icons.history),
+                    label: Text('History'),
+                  ),
+                  NavigationRailDestination(
                     icon: Icon(Icons.person),
                     label: Text('Profile'),
                   ),
@@ -196,6 +201,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 if (Provider.of<UserProvider>(context).isLoggedIn)
                   LibraryPage(),
                 ExplorerPage(),
+                HistoryPage(),
                 ProfilePage(),
               ],
             ),
@@ -228,10 +234,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     label: 'Explore',
                   ),
                   BottomNavigationBarItem(
+                    icon: Icon(Icons.history),
+                    label: 'History',
+                  ),
+                  BottomNavigationBarItem(
                     icon: Icon(Icons.person),
                     label: 'Profile',
                   ),
                 ],
+                type: BottomNavigationBarType.fixed,
               ),
             )
           : SizedBox(),

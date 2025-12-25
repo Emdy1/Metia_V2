@@ -6,6 +6,7 @@ import 'package:metia/data/isar_services/isar_services.dart';
 import 'package:metia/data/user/user_data.dart';
 import 'package:metia/models/anime_database_service.dart';
 import 'package:metia/models/episode_data_service.dart';
+import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/home_page.dart';
@@ -20,6 +21,7 @@ void main() async {
   await EpisodeDataService.setup();
   await ExtensionServices.setup();
   await AnimeDatabaseService.setup();
+  await EpisodeHistoryService.setup();
 
   //init the episode data service
   final episodeDataService = EpisodeDataService();
@@ -27,6 +29,9 @@ void main() async {
   //init the anime data service
   final animeDatabaseService = AnimeDatabaseService();
   await animeDatabaseService.getAnimeDatabases();
+  //init anime history service
+  final animeHistoryService = EpisodeHistoryService();
+  await animeHistoryService.getEpisodeHistories();
 
   // Initialize ScriptExecutor early
   final extensionServices = ExtensionServices();
@@ -44,6 +49,7 @@ void main() async {
         ChangeNotifierProvider.value(value: extensionServices),
         ChangeNotifierProvider.value(value: episodeDataService),
         ChangeNotifierProvider.value(value: animeDatabaseService),
+        ChangeNotifierProvider.value(value: animeHistoryService),
       ],
       builder: (context, _) {
         final themeProvider = context.watch<ThemeProvider>();

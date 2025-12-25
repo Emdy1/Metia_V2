@@ -7,15 +7,15 @@ import 'package:media_kit/media_kit.dart'; // Provides [Player], [Media], [Playl
 import 'package:media_kit_video/media_kit_video.dart'; // Provides [VideoController] & [Video] etc.
 
 import 'package:flutter/services.dart';
-import 'package:metia/data/extensions/extension.dart';
 import 'package:metia/data/extensions/extension_runtime_manager.dart';
 import 'package:metia/data/extensions/extension_services.dart';
-import 'package:metia/data/user/profile.dart';
 import 'package:metia/data/user/user_library.dart';
 import 'package:metia/js_core/anime.dart';
 import 'package:metia/models/anime_database.dart';
 import 'package:metia/models/episode_data_service.dart';
 import 'package:metia/models/episode_database.dart';
+import 'package:metia/models/episode_history_instance.dart';
+import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:provider/provider.dart';
@@ -125,74 +125,53 @@ class _PlayerPageState extends State<PlayerPage> {
     log("Loading Next Episode");
     int epIndex = widget.episodeList.indexWhere(
       (element) =>
-          element ==
-          widget
-              .episodeData, // compare by ID or unique property    //TODO: widget.episodeList[epIndex].url
+          element == widget.episodeData, // compare by ID or unique property    //TODO: widget.episodeList[epIndex].url
     );
 
-    runtime.executor!
-        .getEpisodeStreamData(widget.episodeList[epIndex + 1].url)
-        .then((value) async {
-          String accessToken = await Provider.of<UserProvider>(
-            context,
-            listen: false,
-          ).getAuthKey();
-          await Tools.updateAnimeTracking(
-            mediaId: widget.mediaListEntry.media.id,
-            progress: epIndex + 1,
-            status: widget.mediaListEntry.media.episodes == epIndex
-                ? "COMPLETED"
-                : "CURRENT",
-            accessToken: accessToken,
-          );
-          Provider.of<UserProvider>(context, listen: false).reloadUserData();
+    runtime.executor!.getEpisodeStreamData(widget.episodeList[epIndex + 1].url).then((value) async {
+      String accessToken = await Provider.of<UserProvider>(context, listen: false).getAuthKey();
+      await Tools.updateAnimeTracking(
+        mediaId: widget.mediaListEntry.media.id,
+        progress: epIndex + 1,
+        status: widget.mediaListEntry.media.episodes == epIndex ? "COMPLETED" : "CURRENT",
+        accessToken: accessToken,
+      );
+      Provider.of<UserProvider>(context, listen: false).reloadUserData();
 
-          Navigator.pop(context);
+      Navigator.pop(context);
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PlayerPage(
-                episodeList: widget.episodeList,
-                animeStreamingData: value[0],
-                mediaListEntry: widget.mediaListEntry,
-                animeData: widget.animeData,
-                episodeData:
-                    widget.episodeList[widget.episodeList.indexWhere(
-                          (element) =>
-                              element ==
-                              widget
-                                  .episodeData, // compare by ID or unique property
-                        ) +
-                        1],
-              ),
-            ),
-          );
-        });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PlayerPage(
+            episodeList: widget.episodeList,
+            animeStreamingData: value[0],
+            mediaListEntry: widget.mediaListEntry,
+            animeData: widget.animeData,
+            episodeData:
+                widget.episodeList[widget.episodeList.indexWhere(
+                      (element) => element == widget.episodeData, // compare by ID or unique property
+                    ) +
+                    1],
+          ),
+        ),
+      );
+    });
   }
 
   void pastEpisode() {
     log("Loading Past Episode");
     int epIndex = widget.episodeList.indexWhere(
       (element) =>
-          element ==
-          widget
-              .episodeData, // compare by ID or unique property    //TODO: widget.episodeList[epIndex].url
+          element == widget.episodeData, // compare by ID or unique property    //TODO: widget.episodeList[epIndex].url
     );
 
-    runtime.executor!.getEpisodeStreamData(widget.episodeList[epIndex-1].url).then((
-      value,
-    ) async {
-      String accessToken = await Provider.of<UserProvider>(
-        context,
-        listen: false,
-      ).getAuthKey();
+    runtime.executor!.getEpisodeStreamData(widget.episodeList[epIndex - 1].url).then((value) async {
+      String accessToken = await Provider.of<UserProvider>(context, listen: false).getAuthKey();
       await Tools.updateAnimeTracking(
         mediaId: widget.mediaListEntry.media.id,
         progress: epIndex + 1,
-        status: widget.mediaListEntry.media.episodes == epIndex
-            ? "COMPLETED"
-            : "CURRENT",
+        status: widget.mediaListEntry.media.episodes == epIndex ? "COMPLETED" : "CURRENT",
         accessToken: accessToken,
       );
       Provider.of<UserProvider>(context, listen: false).reloadUserData();
@@ -210,10 +189,7 @@ class _PlayerPageState extends State<PlayerPage> {
             animeData: widget.animeData,
             episodeData:
                 widget.episodeList[widget.episodeList.indexWhere(
-                      (element) =>
-                          element ==
-                          widget
-                              .episodeData, // compare by ID or unique property
+                      (element) => element == widget.episodeData, // compare by ID or unique property
                     ) -
                     1],
           ),
@@ -237,22 +213,25 @@ class _PlayerPageState extends State<PlayerPage> {
   void initState() {
     super.initState();
 
-    extensionServices = Provider.of<ExtensionRuntimeManager>(
-      context,
-      listen: false,
-    ).extensionServices;
+    extensionServices = Provider.of<ExtensionRuntimeManager>(context, listen: false).extensionServices;
 
-    episodeDataService = Provider.of<EpisodeDataService>(
-      context,
-      listen: false,
-    );
+    episodeDataService = Provider.of<EpisodeDataService>(context, listen: false);
     runtime = Provider.of<ExtensionRuntimeManager>(context, listen: false);
 
+    Provider.of<EpisodeHistoryService>(context, listen: false).addEpisodeHistory(
+      EpisodeHistoryInstance()
+        ..episode = widget.episodeData
+        ..title = widget.animeData.name
+        ..episodeNumber = 0
+        ..anilistMeidaId = widget.mediaListEntry.media.id
+        ..extensionId = runtime.extensionServices.mainExtension!.id
+        ..seen = false // for now make it false , here is the orignial code [(progress ?? 0) > episodeIndex]
+        ..parentList = widget.episodeList
+        ..anime = widget.animeData,
+    );
+
     // Force landscape only when this page is visible
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     // Listen to player state changes
@@ -288,8 +267,7 @@ class _PlayerPageState extends State<PlayerPage> {
 
     // Determine the index of the current episode safely
     epIndex = widget.episodeList.indexWhere(
-      (element) =>
-          element == widget.episodeData, // compare by ID or unique property
+      (element) => element == widget.episodeData, // compare by ID or unique property
     );
 
     // If not found, default to 0
@@ -336,16 +314,11 @@ class _PlayerPageState extends State<PlayerPage> {
               if (firstTime) {
                 firstTime = false;
                 if ((widget.mediaListEntry.progress ?? 0) < epIndex) {
-                  String accessToken = await Provider.of<UserProvider>(
-                    context,
-                    listen: false,
-                  ).getAuthKey();
+                  String accessToken = await Provider.of<UserProvider>(context, listen: false).getAuthKey();
                   Tools.updateAnimeTracking(
                     mediaId: widget.mediaListEntry.media.id,
                     progress: epIndex,
-                    status: widget.mediaListEntry.media.episodes == epIndex
-                        ? "COMPLETED"
-                        : "CURRENT",
+                    status: widget.mediaListEntry.media.episodes == epIndex ? "COMPLETED" : "CURRENT",
                     accessToken: accessToken,
                   );
                 }
@@ -438,8 +411,7 @@ class _PlayerPageState extends State<PlayerPage> {
       DeviceOrientation.landscapeRight,
     ]);
     player.dispose();
-    if (!(Platform.isAndroid || Platform.isIOS))
-      windowManager.setFullScreen(false);
+    if (!(Platform.isAndroid || Platform.isIOS)) windowManager.setFullScreen(false);
 
     super.dispose();
   }
@@ -469,8 +441,7 @@ class _PlayerPageState extends State<PlayerPage> {
     final isLeftSide = _lastTapPosition!.dx < screenWidth / 2;
 
     final now = DateTime.now();
-    if (_lastDoubleTapTime != null &&
-        now.difference(_lastDoubleTapTime!).inSeconds <= 1) {
+    if (_lastDoubleTapTime != null && now.difference(_lastDoubleTapTime!).inSeconds <= 1) {
       setState(() {
         _seekSeconds += isLeftSide ? -10 : 10;
       });
@@ -481,9 +452,7 @@ class _PlayerPageState extends State<PlayerPage> {
     }
     _lastDoubleTapTime = now;
 
-    player.seek(
-      player.state.position + Duration(seconds: isLeftSide ? -10 : 10),
-    );
+    player.seek(player.state.position + Duration(seconds: isLeftSide ? -10 : 10));
 
     setState(() {
       _showSeekDisplay = true;
@@ -528,27 +497,17 @@ class _PlayerPageState extends State<PlayerPage> {
       left: _seekSeconds < 0
           ? MediaQuery.of(context).size.width * 0.25 -
                 50 // Subtract half of approximate container width
-          : MediaQuery.of(context).size.width * 0.75 -
-                50, // Subtract half of approximate container width
-      top:
-          MediaQuery.of(context).size.height * 0.5 -
-          25, // Subtract half of approximate container height
+          : MediaQuery.of(context).size.width * 0.75 - 50, // Subtract half of approximate container width
+      top: MediaQuery.of(context).size.height * 0.5 - 25, // Subtract half of approximate container height
       child: AnimatedOpacity(
         opacity: _showSeekDisplay ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 300),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(8)),
           child: Text(
             '${_seekSeconds > 0 ? "+" : ""}${_seekSeconds}s',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -560,27 +519,17 @@ class _PlayerPageState extends State<PlayerPage> {
       left: _seekSeconds < 0
           ? MediaQuery.of(context).size.width * 0.25 -
                 50 // Subtract half of approximate container width
-          : MediaQuery.of(context).size.width * 0.75 -
-                50, // Subtract half of approximate container width
-      top:
-          MediaQuery.of(context).size.height * 0.5 -
-          25, // Subtract half of approximate container height
+          : MediaQuery.of(context).size.width * 0.75 - 50, // Subtract half of approximate container width
+      top: MediaQuery.of(context).size.height * 0.5 - 25, // Subtract half of approximate container height
       child: AnimatedOpacity(
         opacity: _is2xRate ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 300),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(8)),
           child: const Text(
             "2X speed",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -638,9 +587,7 @@ class _PlayerPageState extends State<PlayerPage> {
                             },
                             icon: Icon(
                               Icons.arrow_back,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant.withOpacity(0.38),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.38),
                             ),
                           ),
                           Container(
@@ -659,10 +606,7 @@ class _PlayerPageState extends State<PlayerPage> {
                                   widget.episodeData.name,
                                   style: TextStyle(
                                     fontSize: 17,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant
-                                        .withOpacity(0.38),
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.38),
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -696,9 +640,7 @@ class _PlayerPageState extends State<PlayerPage> {
                                   icon: Icon(
                                     Icons.arrow_back,
                                     size: 40,
-                                    color: epIndex == 0
-                                        ? const Color.fromARGB(255, 51, 50, 51)
-                                        : Colors.white,
+                                    color: epIndex == 0 ? const Color.fromARGB(255, 51, 50, 51) : Colors.white,
                                   ),
                                 ),
                               ),
@@ -716,9 +658,7 @@ class _PlayerPageState extends State<PlayerPage> {
                                     }
                                   },
                                   icon: Icon(
-                                    player.state.playing
-                                        ? Icons.pause
-                                        : Icons.play_arrow,
+                                    player.state.playing ? Icons.pause : Icons.play_arrow,
                                     size: 40,
                                     color: Colors.white,
                                   ),
@@ -730,8 +670,7 @@ class _PlayerPageState extends State<PlayerPage> {
                                   borderRadius: BorderRadius.circular(50),
                                 ),
                                 child: IconButton(
-                                  onPressed:
-                                      (epIndex + 1) == widget.animeData.length
+                                  onPressed: (epIndex + 1) == widget.animeData.length
                                       ? null
                                       : () {
                                           nextEpisode();
@@ -740,8 +679,7 @@ class _PlayerPageState extends State<PlayerPage> {
                                   icon: Icon(
                                     Icons.arrow_forward,
                                     size: 40,
-                                    color:
-                                        (epIndex + 1) == widget.animeData.length
+                                    color: (epIndex + 1) == widget.animeData.length
                                         ? const Color.fromARGB(255, 51, 50, 51)
                                         : Colors.white,
                                   ),
@@ -757,21 +695,14 @@ class _PlayerPageState extends State<PlayerPage> {
                       alignment: Alignment.center,
                       width: double.infinity,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 30,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 30),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           spacing: 10,
                           children: [
                             Text(
                               currentTime,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                             ),
                             // ...inside your build method...
                             Expanded(
@@ -782,76 +713,41 @@ class _PlayerPageState extends State<PlayerPage> {
                                   children: [
                                     // Buffering bar (background)
                                     Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
                                       child: Stack(
                                         children: [
                                           Container(
                                             height: 4,
                                             decoration: BoxDecoration(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onPrimary
-                                                  .withOpacity(0.3),
-                                              borderRadius:
-                                                  BorderRadius.circular(2),
+                                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.3),
+                                              borderRadius: BorderRadius.circular(2),
                                             ),
                                           ),
                                           // Buffered progress
                                           FractionallySizedBox(
-                                            widthFactor:
-                                                player
-                                                        .state
-                                                        .duration
-                                                        .inSeconds ==
-                                                    0
+                                            widthFactor: player.state.duration.inSeconds == 0
                                                 ? 0
-                                                : player
-                                                          .state
-                                                          .buffer
-                                                          .inSeconds /
-                                                      player
-                                                          .state
-                                                          .duration
-                                                          .inSeconds,
+                                                : player.state.buffer.inSeconds / player.state.duration.inSeconds,
                                             child: Container(
                                               height: 4,
                                               decoration: BoxDecoration(
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onPrimary,
-                                                borderRadius:
-                                                    BorderRadius.circular(2),
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                borderRadius: BorderRadius.circular(2),
                                               ),
                                             ),
                                           ),
                                           // Playback progress (white)
                                           // Playback progress (white)
                                           FractionallySizedBox(
-                                            widthFactor:
-                                                player
-                                                        .state
-                                                        .duration
-                                                        .inSeconds ==
-                                                    0
+                                            widthFactor: player.state.duration.inSeconds == 0
                                                 ? 0
-                                                : (_dragValue ??
-                                                          player
-                                                              .state
-                                                              .position
-                                                              .inSeconds
-                                                              .toDouble()) /
-                                                      player
-                                                          .state
-                                                          .duration
-                                                          .inSeconds,
+                                                : (_dragValue ?? player.state.position.inSeconds.toDouble()) /
+                                                      player.state.duration.inSeconds,
                                             child: Container(
                                               height: 4,
                                               decoration: BoxDecoration(
                                                 color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(2),
+                                                borderRadius: BorderRadius.circular(2),
                                               ),
                                             ),
                                           ),
@@ -863,32 +759,20 @@ class _PlayerPageState extends State<PlayerPage> {
                                     SliderTheme(
                                       data: SliderTheme.of(context).copyWith(
                                         trackHeight: 0,
-                                        thumbShape: const RoundSliderThumbShape(
-                                          enabledThumbRadius: 7,
-                                        ),
-                                        overlayShape:
-                                            const RoundSliderOverlayShape(
-                                              overlayRadius: 14,
-                                            ),
+                                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                                         activeTrackColor: Colors.transparent,
                                         inactiveTrackColor: Colors.transparent,
                                       ),
                                       child: Slider(
                                         min: 0,
-                                        max: player.state.duration.inSeconds
-                                            .toDouble(),
+                                        max: player.state.duration.inSeconds.toDouble(),
                                         value:
                                             _dragValue ??
-                                            player.state.position.inSeconds
-                                                .toDouble()
-                                                .clamp(
-                                                  0,
-                                                  player
-                                                      .state
-                                                      .duration
-                                                      .inSeconds
-                                                      .toDouble(),
-                                                ),
+                                            player.state.position.inSeconds.toDouble().clamp(
+                                              0,
+                                              player.state.duration.inSeconds.toDouble(),
+                                            ),
                                         onChanged: (value) {
                                           _startHideTimer();
                                           setState(() {
@@ -899,9 +783,7 @@ class _PlayerPageState extends State<PlayerPage> {
                                           setState(() {
                                             _dragValue = null;
                                           });
-                                          player.seek(
-                                            Duration(seconds: value.toInt()),
-                                          );
+                                          player.seek(Duration(seconds: value.toInt()));
                                         },
                                       ),
                                     ),
@@ -911,18 +793,12 @@ class _PlayerPageState extends State<PlayerPage> {
                             ),
                             Text(
                               totalTime,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                             ),
                             !(Platform.isIOS || Platform.isAndroid)
                                 ? IconButton(
                                     icon: Icon(
-                                      _isFullscreen
-                                          ? Icons.fullscreen_exit
-                                          : Icons.fullscreen,
+                                      _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
                                       size: 30,
                                       color: Colors.white,
                                     ),
