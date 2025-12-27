@@ -1,6 +1,8 @@
 // anime.dart
 
 import 'dart:ui';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class Media {
   final int id;
@@ -85,22 +87,41 @@ class Title {
     if (json == null) {
       return Title();
     }
-    return Title(romaji: json['romaji'] ?? "", english: json['english'] ?? "", native: json['native'] ?? "");
+    return Title(romaji: json['romaji'] ?? null, english: json['english'] ?? null, native: json['native'] ?? null);
   }
+}
+
+Color? hexToColor(String? hex) {
+  if (hex == null || hex.isEmpty) return null;
+
+  hex = hex.replaceAll('#', '');
+
+  // If no alpha provided, add full opacity
+  if (hex.length == 6) {
+    hex = 'FF$hex';
+  }
+
+  return Color(int.parse(hex, radix: 16));
 }
 
 class CoverImage {
   final String large;
   final String extraLarge;
   final String medium;
+  final Color color;
 
-  CoverImage({required this.large, required this.extraLarge, required this.medium});
+  CoverImage({required this.large, required this.extraLarge, required this.medium, required this.color});
 
   factory CoverImage.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
-      return CoverImage(large: '', extraLarge: '', medium: '');
+      return CoverImage(large: '', extraLarge: '', medium: '', color: Color.fromARGB(255, 72, 255, 0));
     }
-    return CoverImage(large: json['large'] ?? '', extraLarge: json['extraLarge'] ?? '', medium: json['medium'] ?? '');
+    return CoverImage(
+      large: json['large'] ?? '',
+      extraLarge: json['extraLarge'] ?? '',
+      medium: json['medium'] ?? '',
+      color: hexToColor(json['color']) ?? Color.fromARGB(255, 72, 255, 0),
+    );
   }
 }
 
@@ -177,4 +198,141 @@ class UserActivity {
       media: Media.fromJson(json['media'] ?? {}),
     );
   }
+}
+
+Future<List<Media>> anilistSearch(String keyword) async {
+  const String url = 'https://graphql.anilist.co';
+
+  const String query = r'''
+query (
+  $page: Int
+  $id: Int
+  $type: MediaType
+  $isAdult: Boolean = false
+  $search: String
+  $format: [MediaFormat]
+  $status: MediaStatus
+  $countryOfOrigin: CountryCode
+  $source: MediaSource
+  $season: MediaSeason
+  $seasonYear: Int
+  $year: String
+  $onList: Boolean
+  $yearLesser: FuzzyDateInt
+  $yearGreater: FuzzyDateInt
+  $episodeLesser: Int
+  $episodeGreater: Int
+  $durationLesser: Int
+  $durationGreater: Int
+  $chapterLesser: Int
+  $chapterGreater: Int
+  $volumeLesser: Int
+  $volumeGreater: Int
+  $licensedBy: [Int]
+  $isLicensed: Boolean
+  $genres: [String]
+  $excludedGenres: [String]
+  $tags: [String]
+  $excludedTags: [String]
+  $minimumTagRank: Int
+  $sort: [MediaSort] = [POPULARITY_DESC, SCORE_DESC]
+) {
+  Page(page: $page, perPage: 80) {
+    pageInfo {
+      hasNextPage
+    }
+    media(
+      id: $id
+      type: $type
+      search: $search
+      format_in: $format
+      status: $status
+      countryOfOrigin: $countryOfOrigin
+      source: $source
+      season: $season
+      seasonYear: $seasonYear
+      startDate_like: $year
+      startDate_lesser: $yearLesser
+      startDate_greater: $yearGreater
+      episodes_lesser: $episodeLesser
+      episodes_greater: $episodeGreater
+      duration_lesser: $durationLesser
+      duration_greater: $durationGreater
+      chapters_lesser: $chapterLesser
+      chapters_greater: $chapterGreater
+      volumes_lesser: $volumeLesser
+      volumes_greater: $volumeGreater
+      licensedById_in: $licensedBy
+      isLicensed: $isLicensed
+      genre_in: $genres
+      genre_not_in: $excludedGenres
+      tag_in: $tags
+      tag_not_in: $excludedTags
+      minimumTagRank: $minimumTagRank
+      onList: $onList
+      sort: $sort
+      isAdult: $isAdult
+    ) {
+      id
+                type
+                status(version: 2)
+                isAdult
+                bannerImage
+                description
+                genres
+                title {
+                  english
+                  romaji
+                  native
+                }
+                episodes
+                averageScore
+                season
+                seasonYear
+                coverImage {
+                  large
+                  extraLarge
+                  medium
+                  color
+                }
+                duration
+                nextAiringEpisode {
+                  airingAt
+                  episode
+                }
+    }
+  }
+}
+
+''';
+
+  List<Media> results = [];
+  int page = 1;
+  bool hasNextPage = true;
+
+  while (hasNextPage) {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'query': query,
+        'variables': {'page': page, 'search': keyword, 'type': 'ANIME', 'isAdult': false},
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('AniList request failed: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body);
+    final pageData = data['data']['Page'];
+
+    final List mediaList = pageData['media'] ?? [];
+    results.addAll(mediaList.map((e) => Media.fromJson(e)));
+
+    hasNextPage = pageData['pageInfo']['hasNextPage'] ?? false;
+    page++;
+  }
+
+  return results;
 }

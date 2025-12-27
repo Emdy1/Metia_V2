@@ -6,6 +6,7 @@ import 'package:metia/data/user/profile.dart';
 
 import 'package:metia/data/user/user_library.dart';
 import 'package:metia/models/login_provider.dart';
+import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/anime_page.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +16,7 @@ class CustomPageRoute extends PageRouteBuilder {
 
   CustomPageRoute({required this.builder})
     : super(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            builder(context),
+        pageBuilder: (context, animation, secondaryAnimation) => builder(context),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -77,10 +77,7 @@ class _AnimeCardState extends State<AnimeCard> {
                       CupertinoContextMenuAction(
                         onPressed: () {
                           debugPrint("Watching $title");
-                          Provider.of<UserProvider>(
-                            context,
-                            listen: false,
-                          ).reloadUserData();
+                          Provider.of<UserProvider>(context, listen: false).reloadUserData();
                           Navigator.of(context).pop();
                         },
                         trailingIcon: CupertinoIcons.play,
@@ -103,11 +100,7 @@ class _AnimeCardState extends State<AnimeCard> {
                           onPressed: () async {
                             //TODO: change to another list
 
-                            await Tools.transferToAnotherList(
-                              widget.anime,
-                              context,
-                              true,
-                            );
+                            await Tools.transferToAnotherList(widget.anime, context, true);
                           },
                         ),
                       // Remove from list
@@ -118,14 +111,8 @@ class _AnimeCardState extends State<AnimeCard> {
                           child: const Text("Remove From List"),
                           onPressed: () async {
                             //TODO: delete the entry from the group entry
-                            widget.anime.getGroup()!.deleteEntry(
-                              context,
-                              widget.anime.id,
-                            );
-                            Provider.of<UserProvider>(
-                              context,
-                              listen: false,
-                            ).reloadUserData();
+                            widget.anime.getGroup()!.deleteEntry(context, widget.anime.id);
+                            Provider.of<UserProvider>(context, listen: false).reloadUserData();
                             Navigator.of(context).pop();
                           },
                         ),
@@ -133,14 +120,14 @@ class _AnimeCardState extends State<AnimeCard> {
 
                     builder: (context, animation) {
                       return GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            CustomPageRoute(
-                              builder: (context) => AnimePage(
-                                anime: widget.anime,
-                              ),
-                            ),
-                          );
+                        onTap: () async{
+                          Provider.of<ThemeProvider>(context, listen: false).setSeed(widget.anime.media.coverImage.color);
+
+                          await Navigator.of(
+                            context,
+                          ).push(CustomPageRoute(builder: (context) => AnimePage(anime: widget.anime)));
+                          Provider.of<ThemeProvider>(context, listen: false).setSeed(Color.fromARGB(255, 72, 255, 0));
+
                         },
                         child: SizedBox(
                           height: 183,
@@ -151,21 +138,14 @@ class _AnimeCardState extends State<AnimeCard> {
                               fit: StackFit.expand,
                               children: [
                                 CachedNetworkImage(
-                                  imageUrl:
-                                      widget.anime.media.coverImage.extraLarge,
+                                  imageUrl: widget.anime.media.coverImage.extraLarge,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) => const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      const Icon(Icons.error),
+                                  placeholder: (context, url) =>
+                                      const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                  errorWidget: (context, url, error) => const Icon(Icons.error),
                                 ),
                                 widget.anime.media.nextAiringEpisode != null
-                                    ? _buildEpAiring(
-                                        widget.anime.media.nextAiringEpisode!,
-                                      )
+                                    ? _buildEpAiring(widget.anime.media.nextAiringEpisode!)
                                     : const SizedBox(),
                               ],
                             ),
@@ -186,9 +166,7 @@ class _AnimeCardState extends State<AnimeCard> {
                           //color: Colors.white,
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
-                          fontSize: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge!.fontSize,
+                          fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -196,7 +174,7 @@ class _AnimeCardState extends State<AnimeCard> {
                   ),
                   const SizedBox(height: 2),
                   //bottom text
-                  Padding(padding: EdgeInsetsGeometry.only(bottom: 4), child: _buildBottomText(),)
+                  Padding(padding: EdgeInsetsGeometry.only(bottom: 4), child: _buildBottomText()),
                 ],
               ),
             ),
@@ -208,17 +186,13 @@ class _AnimeCardState extends State<AnimeCard> {
 
   _buildBottomText() {
     MediaListGroup? mediaListGroup = widget.anime.getGroup();
-    bool isNewEpisodeTab =
-        widget.anime.media.nextAiringEpisode != null &&
-        mediaListGroup?.name == "Airing";
+    bool isNewEpisodeTab = widget.anime.media.nextAiringEpisode != null && mediaListGroup?.name == "Airing";
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isNewEpisodeTab ? 0 : 8),
       child: Center(
         child: Row(
-          mainAxisAlignment: isNewEpisodeTab
-              ? MainAxisAlignment.center
-              : MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: isNewEpisodeTab ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: isNewEpisodeTab
               ? [
@@ -230,17 +204,11 @@ class _AnimeCardState extends State<AnimeCard> {
                         "${(widget.anime.media.nextAiringEpisode!.episode - 1) - widget.anime.progress!} Ep Behind",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium!.fontSize,
+                          fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize,
                           color: Theme.of(context).colorScheme.tertiary,
                         ),
                       ),
-                      Icon(
-                        Icons.notifications_active,
-                        color: Theme.of(context).colorScheme.tertiary,
-                        size: 16,
-                      ),
+                      Icon(Icons.notifications_active, color: Theme.of(context).colorScheme.tertiary, size: 16),
                     ],
                   ),
                 ]
@@ -249,9 +217,7 @@ class _AnimeCardState extends State<AnimeCard> {
                     "${widget.anime.progress}/${widget.anime.media.episodes ?? "?"}",
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.tertiary,
-                      fontSize: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium!.fontSize,
+                      fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -259,17 +225,12 @@ class _AnimeCardState extends State<AnimeCard> {
                     spacing: 2,
                     children: [
                       Text(
-                        widget.anime.media.averageScore == null ||
-                                widget.anime.media.averageScore == 0
+                        widget.anime.media.averageScore == null || widget.anime.media.averageScore == 0
                             ? "0.0"
-                            : widget.anime.media.averageScore
-                                  .toString()
-                                  .replaceRange(1, 1, '.'),
+                            : widget.anime.media.averageScore.toString().replaceRange(1, 1, '.'),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium!.fontSize,
+                          fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize,
                           color: Theme.of(context).colorScheme.tertiary,
                         ),
                       ),
@@ -285,9 +246,7 @@ class _AnimeCardState extends State<AnimeCard> {
   _buildEpAiring(NextAiringEpisode nextAiring) {
     final int airingAt = nextAiring.airingAt;
     final int episode = nextAiring.episode;
-    final Duration diff = DateTime.fromMillisecondsSinceEpoch(
-      airingAt * 1000,
-    ).difference(DateTime.now());
+    final Duration diff = DateTime.fromMillisecondsSinceEpoch(airingAt * 1000).difference(DateTime.now());
     if (diff.isNegative) return const SizedBox();
     if (episode > 1) return const SizedBox();
 

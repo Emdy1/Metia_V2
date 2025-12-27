@@ -176,11 +176,12 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       return;
     }
 
-    final title = runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "english"
-        ? widget.anime.media.title.english ?? widget.anime.media.title.romaji ?? widget.anime.media.title.native
-        : runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "romaji"
-        ? widget.anime.media.title.romaji ?? widget.anime.media.title.english ?? widget.anime.media.title.native
-        : "";
+    String? title = "";
+    if (runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "english") {
+      title = widget.anime.media.title.english ?? widget.anime.media.title.romaji ?? widget.anime.media.title.native;
+    } else if (runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "romaji") {
+      title = widget.anime.media.title.romaji ?? widget.anime.media.title.english ?? widget.anime.media.title.native;
+    }
 
     if (title == "") {
       print("ERROR: title is empty");
@@ -361,8 +362,6 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                         IconButton(
                                           onPressed: () async {
                                             // Navigator.of(context).pop();
-
-                                            
 
                                             await Navigator.push(
                                               context,
@@ -1010,20 +1009,26 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                               runtime.extensionServices.currentExtensions.isEmpty)
                             return;
 
-                          final title =
-                              runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "english"
-                              ? widget.anime.media.title.english ??
-                                    widget.anime.media.title.romaji ??
-                                    widget.anime.media.title.native
-                              : runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() == "romaji"
-                              ? widget.anime.media.title.romaji ??
-                                    widget.anime.media.title.english ??
-                                    widget.anime.media.title.native
-                              : "";
+                          String? title = "";
+                          if (runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() ==
+                              "english") {
+                            title =
+                                widget.anime.media.title.english ??
+                                widget.anime.media.title.romaji ??
+                                widget.anime.media.title.native;
+                          } else if (runtime.extensionServices.mainExtension?.anilistPreferedTitle!.toLowerCase() ==
+                              "romaji") {
+                            title =
+                                widget.anime.media.title.romaji ??
+                                widget.anime.media.title.english ??
+                                widget.anime.media.title.native;
+                          }
 
-                          //correctMatchedAnime(title!);
+                          correctMatchedAnime(title!);
                           await Provider.of<UserProvider>(context, listen: false).reloadUserData();
-                          setState(() {});
+                          if (mounted) {
+                            setState(() {});
+                          }
                         },
                         child: Text(
                           "Wrong?",
@@ -1160,7 +1165,12 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
           return AnimatedOpacity(
             opacity: isAppBarExpanded ? 1 : 0,
             duration: Duration(milliseconds: 100),
-            child: Text(widget.anime.media.title.english ?? "No Title"),
+            child: Text(
+              widget.anime.media.title.english ??
+                  widget.anime.media.title.romaji ??
+                  widget.anime.media.title.native ??
+                  "No Title",
+            ),
           );
         },
       ),
@@ -1267,7 +1277,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         children: [
                           // Title
                           Text(
-                            widget.anime.media.title.english ?? "No Title",
+                            widget.anime.media.title.english ?? widget.anime.media.title.romaji ?? widget.anime.media.title.native ?? "No Title",
                             style: TextStyle(
                               color: scheme.onBackground, // instead of Colors.white
                               fontSize: 36,

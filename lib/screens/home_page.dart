@@ -24,28 +24,35 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   StreamSubscription<Uri>? _linkSubscription;
 
   //final List<Widget> _tabs = [LibraryPage(), ExplorerPage(), ProfilePage()];
   bool isLandscpae = false;
 
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      // App has resumed
+      print("App resumed");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     context.read<ExtensionServices>().getExtensions();
     _tabController = TabController(
-      length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn)
-          ? 4
-          : 3,
+      length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn) ? 4 : 3,
       vsync: this,
     );
     Provider.of<UserProvider>(context, listen: false).addListener(() {
       _tabController = TabController(
-        length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn)
-            ? 4
-            : 3,
+        length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn) ? 4 : 3,
         vsync: this,
       );
     });
@@ -83,23 +90,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         if (response.statusCode == 200) {
           final responseData = jsonDecode(response.body);
           if (mounted) {
-            Provider.of<UserProvider>(
-              context,
-              listen: false,
-            ).logIn(responseData['access_token'].toString());
+            Provider.of<UserProvider>(context, listen: false).logIn(responseData['access_token'].toString());
           } else {
             Logger.log(
               'not mounted',
               level: 'INFO',
-              details:
-                  'the \'if\' conition that check if mounted to log in the user by his access token isn/t true',
+              details: 'the \'if\' conition that check if mounted to log in the user by his access token isn/t true',
             );
           }
         } else {
-          throw Logger.log(
-            'Failed to retrieve access token: ${response.body}',
-            level: 'ERROR',
-          );
+          throw Logger.log('Failed to retrieve access token: ${response.body}', level: 'ERROR');
         }
       } catch (e) {
         throw Logger.log('Request failed: $e', level: 'ERROR');
@@ -127,16 +127,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     onSelected: (value) {
                       _switchMenuButtons(value, context);
                     },
-                    itemBuilder: (BuildContext context) =>
-                        _loggedMenuItemList(context),
+                    itemBuilder: (BuildContext context) => _loggedMenuItemList(context),
                   )
                 : PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert),
                     onSelected: (value) {
                       _switchMenuButtons(value, context);
                     },
-                    itemBuilder: (BuildContext context) =>
-                        _defaultMenuItemList(),
+                    itemBuilder: (BuildContext context) => _defaultMenuItemList(),
                   ),
           ),
         ],
@@ -145,11 +143,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           padding: const EdgeInsets.all(8.0),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.0),
-            child: SvgPicture.asset(
-              'assets/icons/logo.svg',
-              height: 24,
-              width: 24,
-            ),
+            child: SvgPicture.asset('assets/icons/logo.svg', height: 24, width: 24),
           ),
         ),
         title: const Text('Metia'),
@@ -173,22 +167,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 labelType: NavigationRailLabelType.all,
                 destinations: [
                   if (Provider.of<UserProvider>(context).isLoggedIn)
-                    NavigationRailDestination(
-                      icon: Icon(Icons.home),
-                      label: Text('Library'),
-                    ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.explore),
-                    label: Text('Explore'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.history),
-                    label: Text('History'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.person),
-                    label: Text('Profile'),
-                  ),
+                    NavigationRailDestination(icon: Icon(Icons.home), label: Text('Library')),
+                  NavigationRailDestination(icon: Icon(Icons.explore), label: Text('Explore')),
+                  NavigationRailDestination(icon: Icon(Icons.history), label: Text('History')),
+                  NavigationRailDestination(icon: Icon(Icons.person), label: Text('Profile')),
                 ],
               ),
             ),
@@ -198,8 +180,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             child: TabBarView(
               controller: _tabController,
               children: [
-                if (Provider.of<UserProvider>(context).isLoggedIn)
-                  LibraryPage(),
+                if (Provider.of<UserProvider>(context).isLoggedIn) LibraryPage(),
                 ExplorerPage(),
                 HistoryPage(),
                 ProfilePage(),
@@ -225,22 +206,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 },
                 items: [
                   if (Provider.of<UserProvider>(context).isLoggedIn)
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.home),
-                      label: 'Library',
-                    ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.explore),
-                    label: 'Explore',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.history),
-                    label: 'History',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.person),
-                    label: 'Profile',
-                  ),
+                    BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Library'),
+                  BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explore'),
+                  BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
                 ],
                 type: BottomNavigationBarType.fixed,
               ),
@@ -252,86 +221,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
 _defaultMenuItemList() {
   return [
-    const PopupMenuItem<String>(
-      enabled: true,
-      height: 36,
-      value: 'logs',
-      child: Text('Logs'),
-    ),
-    const PopupMenuItem<String>(
-      value: 'extensions',
-      height: 36,
-      child: Text('Extensions'),
-    ),
-    const PopupMenuItem<String>(
-      value: 'Settings',
-      height: 36,
-      child: Text('Settings'),
-    ),
+    const PopupMenuItem<String>(enabled: true, height: 36, value: 'logs', child: Text('Logs')),
+    const PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
+    const PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
   ];
 }
 
 _loggedMenuItemList(BuildContext context) {
   return [
-    const PopupMenuItem<String>(
-      enabled: false,
-      height: 36,
-      child: Text('Library'),
-    ),
-    const PopupMenuItem<String>(
-      value: 'refresh',
-      height: 36,
-      child: Text('Refresh'),
-    ),
-    const PopupMenuItem<String>(
-      value: 'createList',
-      height: 36,
-      child: Text('Create a New List'),
-    ),
+    const PopupMenuItem<String>(enabled: false, height: 36, child: Text('Library')),
+    const PopupMenuItem<String>(value: 'refresh', height: 36, child: Text('Refresh')),
+    const PopupMenuItem<String>(value: 'createList', height: 36, child: Text('Create a New List')),
 
-    const PopupMenuItem<String>(
-      height: 36,
-      enabled: false,
-      child: Text('Explorer'),
-    ),
-    const PopupMenuItem<String>(
-      value: 'changeSource',
-      height: 36,
-      child: Text('Change Source'),
-    ),
+    const PopupMenuItem<String>(height: 36, enabled: false, child: Text('Explorer')),
+    const PopupMenuItem<String>(value: 'changeSource', height: 36, child: Text('Change Source')),
 
-    const PopupMenuItem<String>(
-      height: 36,
-      enabled: false,
-      child: Text('Profile', textAlign: TextAlign.end),
-    ),
-    const PopupMenuItem<String>(
-      value: 'logout',
-      height: 36,
-      child: Text('Log Out'),
-    ),
-    const PopupMenuItem<String>(
-      height: 36,
-      enabled: false,
-      child: Text('General', textAlign: TextAlign.end),
-    ),
+    const PopupMenuItem<String>(height: 36, enabled: false, child: Text('Profile', textAlign: TextAlign.end)),
+    const PopupMenuItem<String>(value: 'logout', height: 36, child: Text('Log Out')),
+    const PopupMenuItem<String>(height: 36, enabled: false, child: Text('General', textAlign: TextAlign.end)),
     PopupMenuItem<String>(
       value: 'revertTheme',
       height: 36,
-      child: Text(
-        'Swith to ${Provider.of<ThemeProvider>(context, listen: false).isDarkMode ? "Light" : "Dark"} Mode',
-      ),
+      child: Text('Swith to ${Provider.of<ThemeProvider>(context, listen: false).isDarkMode ? "Light" : "Dark"} Mode'),
     ),
-    const PopupMenuItem<String>(
-      value: 'extensions',
-      height: 36,
-      child: Text('Extensions'),
-    ),
-    const PopupMenuItem<String>(
-      value: 'Settings',
-      height: 36,
-      child: Text('Settings'),
-    ),
+    const PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
+    const PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
     const PopupMenuItem<String>(value: 'logs', height: 36, child: Text('Logs')),
   ];
 }
@@ -339,14 +253,10 @@ _loggedMenuItemList(BuildContext context) {
 _switchMenuButtons(value, context) {
   switch (value) {
     case 'extensions':
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => ExtensionsPage()));
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ExtensionsPage()));
       break;
     case 'logs':
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => LoggingPage()));
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) => LoggingPage()));
       break;
     case 'logout':
       Provider.of<UserProvider>(context, listen: false).logOut();
@@ -358,10 +268,7 @@ _switchMenuButtons(value, context) {
     case 'changeSource':
       break;
     case 'revertTheme':
-      bool isDarkMode = Provider.of<ThemeProvider>(
-        context,
-        listen: false,
-      ).isDarkMode;
+      bool isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
 
       if (isDarkMode) {
         Provider.of<ThemeProvider>(context, listen: false).setLightMode();

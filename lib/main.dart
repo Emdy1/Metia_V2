@@ -15,7 +15,8 @@ import 'package:provider/provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
-  //never delet this, it should be the first thing to run after "WidgetsFlutterBinding.ensureInitialized();"
+  
+  //never delet this, it should be run only after "WidgetsFlutterBinding.ensureInitialized();"
   await IsarServices.setup();
   await UserData.initialize();
   await EpisodeDataService.setup();
@@ -26,14 +27,16 @@ void main() async {
   //init the episode data service
   final episodeDataService = EpisodeDataService();
   await episodeDataService.getEpisodeDatas();
+
   //init the anime data service
   final animeDatabaseService = AnimeDatabaseService();
   await animeDatabaseService.getAnimeDatabases();
+
   //init anime history service
   final animeHistoryService = EpisodeHistoryService();
   await animeHistoryService.getEpisodeHistories();
 
-  // Initialize ScriptExecutor early
+  //init ScriptExecutor early
   final extensionServices = ExtensionServices();
   await extensionServices.getExtensions();
   final manager = ExtensionRuntimeManager(extensionServices);

@@ -464,7 +464,9 @@ class UserProvider extends ChangeNotifier {
     }
 
     // Step 3: Insert the airing group at the beginning
-    parsedGroups.insert(0, airingGroup);
+    if(airingGroup.entries.isNotEmpty){
+      parsedGroups.insert(0, airingGroup);
+    }
 
     const desiredOrder = [
       "Airing",
