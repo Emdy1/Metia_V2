@@ -222,10 +222,11 @@ class _PlayerPageState extends State<PlayerPage> {
       EpisodeHistoryInstance()
         ..episode = widget.episodeData
         ..title = widget.animeData.name
-        ..episodeNumber = 0
+        ..episodeNumber = widget.episodeList.indexWhere((episode) => episode.url == widget.episodeData.url)
         ..anilistMeidaId = widget.mediaListEntry.media.id
         ..extensionId = runtime.extensionServices.mainExtension!.id
-        ..seen = false // for now make it false , here is the orignial code [(progress ?? 0) > episodeIndex]
+        ..seen =
+            false // for now make it false , here is the orignial code [(progress ?? 0) > episodeIndex]
         ..parentList = widget.episodeList
         ..anime = widget.animeData,
     );
@@ -410,8 +411,9 @@ class _PlayerPageState extends State<PlayerPage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
     player.dispose();
-    if (!(Platform.isAndroid || Platform.isIOS)) windowManager.setFullScreen(false);
 
     super.dispose();
   }

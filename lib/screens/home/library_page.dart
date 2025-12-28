@@ -16,8 +16,7 @@ class LibraryPage extends StatefulWidget {
   State<LibraryPage> createState() => _LibraryPageState();
 }
 
-class _LibraryPageState extends State<LibraryPage>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+class _LibraryPageState extends State<LibraryPage> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late TabController _tabController;
   int _previousLibraryLength = 0;
   int _savedTabIndex = 0;
@@ -119,10 +118,7 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildTabContent(dynamic libraryEntry) {
-    final crossAxisCount = Tools.getResponsiveCrossAxisVal(
-      MediaQuery.of(context).size.width,
-      itemWidth: 135,
-    );
+    final crossAxisCount = Tools.getResponsiveCrossAxisVal(MediaQuery.of(context).size.width, itemWidth: 135);
 
     if (Platform.isAndroid) {
       return RefreshIndicator.adaptive(
@@ -166,20 +162,17 @@ class _LibraryPageState extends State<LibraryPage>
             mainAxisExtent: 268,
             childAspectRatio: 0.7,
           ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final MediaListEntry anime = libraryEntry.entries[index];
-              return AnimeCard(
-                key: ValueKey('${anime.id}_${libraryEntry.name}'),
-                context: context,
-                index: index,
-                tabName: anime.status,
-                anime: anime,
-                onLibraryChanged: () {},
-              );
-            },
-            childCount: libraryEntry.entries.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final MediaListEntry anime = libraryEntry.entries[index];
+            return AnimeCard(
+              key: ValueKey('${anime.id}_${libraryEntry.name}'),
+              context: context,
+              index: index,
+              tabName: anime.status,
+              anime: anime,
+              onLibraryChanged: () {},
+            );
+          }, childCount: libraryEntry.entries.length),
         ),
       ],
     );

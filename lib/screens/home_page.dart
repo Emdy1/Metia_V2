@@ -5,6 +5,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:metia/data/extensions/extension_services.dart';
+import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/logger.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
@@ -231,7 +232,8 @@ class _AppBarMenu extends StatelessWidget {
           return PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) => _switchMenuButtons(value, context),
-            itemBuilder: (BuildContext context) => isLoggedIn ? _loggedMenuItemList(context) : _defaultMenuItemList(),
+            itemBuilder: (BuildContext context) =>
+                isLoggedIn ? _loggedMenuItemList(context) : _defaultMenuItemList(context),
           );
         },
       ),
@@ -239,11 +241,18 @@ class _AppBarMenu extends StatelessWidget {
   }
 }
 
-List<PopupMenuEntry<String>> _defaultMenuItemList() {
-  return const [
-    PopupMenuItem<String>(enabled: true, height: 36, value: 'logs', child: Text('Logs')),
-    PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
-    PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
+List<PopupMenuEntry<String>> _defaultMenuItemList(context) {
+  final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+  return [
+    const PopupMenuItem<String>(enabled: true, height: 36, value: 'logs', child: Text('Logs')),
+    const PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
+    const PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
+    const PopupMenuItem<String>(value: 'clearHistory', height: 36, child: Text('Clear History')),
+    PopupMenuItem<String>(
+      value: 'revertTheme',
+      height: 36,
+      child: Text('Switch to ${isDarkMode ? "Light" : "Dark"} Mode'),
+    ),
   ];
 }
 
@@ -257,6 +266,7 @@ List<PopupMenuEntry<String>> _loggedMenuItemList(BuildContext context) {
     const PopupMenuItem<String>(height: 36, enabled: false, child: Text('Profile', textAlign: TextAlign.end)),
     const PopupMenuItem<String>(value: 'logout', height: 36, child: Text('Log Out')),
     const PopupMenuItem<String>(height: 36, enabled: false, child: Text('General', textAlign: TextAlign.end)),
+    const PopupMenuItem<String>(value: 'clearHistory', height: 36, child: Text('Clear History')),
     PopupMenuItem<String>(
       value: 'revertTheme',
       height: 36,
@@ -270,6 +280,9 @@ List<PopupMenuEntry<String>> _loggedMenuItemList(BuildContext context) {
 
 void _switchMenuButtons(String value, BuildContext context) {
   switch (value) {
+    case 'clearHistory':
+      Provider.of<EpisodeHistoryService>(context, listen: false).deleteAllEpisodeHistory();
+      break;
     case 'extensions':
       Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ExtensionsPage()));
       break;
