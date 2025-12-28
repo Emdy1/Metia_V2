@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:metia/anilist/anime.dart';
@@ -38,11 +40,7 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
   @override
   void initState() {
     // TODO: implement initState
-    title =
-        widget.anime.title.english ??
-        widget.anime.title.romaji ??
-        widget.anime.title.native ??
-        "NO TITLE";
+    title = widget.anime.title.english ?? widget.anime.title.romaji ?? widget.anime.title.native ?? "NO TITLE";
     Provider.of<UserProvider>(context, listen: false).user;
     super.initState();
   }
@@ -65,11 +63,7 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                       Navigator.of(context).push(
                         CustomPageRoute(
                           builder: (context) => AnimePage(
-                            anime: MediaListEntry(
-                              id: 0,
-                              status: "",
-                              media: widget.anime,
-                            ),
+                            anime: MediaListEntry(id: 0, status: "", media: widget.anime),
                           ),
                         ),
                       );
@@ -85,13 +79,9 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                             CachedNetworkImage(
                               imageUrl: widget.anime.coverImage.large,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.error),
+                              placeholder: (context, url) =>
+                                  const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              errorWidget: (context, url, error) => const Icon(Icons.error),
                             ),
                             Opacity(
                               opacity: widget.alreadyInLibrary ? 0.60 : 0,
@@ -102,11 +92,7 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                                 child: Text(
                                   widget.listName,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                                 ),
                               ),
                             if (!widget.alreadyInLibrary)
@@ -115,7 +101,7 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: GestureDetector(
-                                    onTap: () {
+                                    onTap: () async {
                                       MediaListEntry anime = MediaListEntry(
                                         id: 0,
                                         status: "notspecified",
@@ -130,25 +116,19 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                                           isCustom: false,
                                         ),
                                       );
-                                      Tools.transferToAnotherList(
-                                        anime,
-                                        context,
-                                        false,
-                                      );
+                                      bool success = await Tools.transferToAnotherList(anime, context, false);
+                                      if(success){
+                                        widget.onLibraryChanged!();
+                                      }else{
+                                        widget.onLibraryChanged!();
+                                        log("WARNING: either the user dismessed the transfer or the api refused the transfer!");
+                                      }
                                     },
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(25),
                                       child: Container(
-                                        color: const Color.fromARGB(
-                                          121,
-                                          255,
-                                          255,
-                                          255,
-                                        ),
-                                        child: Icon(
-                                          Icons.add,
-                                          color: Colors.black,
-                                        ),
+                                        color: const Color.fromARGB(121, 255, 255, 255),
+                                        child: Icon(Icons.add, color: Colors.black),
                                       ),
                                     ),
                                   ),
@@ -171,9 +151,7 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                           //color: Colors.white,
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
-                          fontSize: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge!.fontSize,
+                          fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -199,22 +177,14 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
         children: [
           Text(
             "${widget.anime.seasonYear}",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize),
           ),
           Row(
             children: [
               Text(
-                widget.anime.averageScore == null ||
-                        widget.anime.averageScore == 0
+                widget.anime.averageScore == null || widget.anime.averageScore == 0
                     ? "0.0"
-                    : widget.anime.averageScore.toString().replaceRange(
-                        1,
-                        1,
-                        '.',
-                      ),
+                    : widget.anime.averageScore.toString().replaceRange(1, 1, '.'),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.orange,

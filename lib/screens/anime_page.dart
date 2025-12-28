@@ -64,6 +64,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
   late TabController _tabController;
 
+  bool isLandscape = false;
+
   //this is garbage but i got no other solution
   int progress = 0;
 
@@ -291,114 +293,120 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
     await showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            // Run once
-            if (isLoading) {
-              executor!.getEpisodeStreamData(url).then((value) {
-                setState(() {
-                  streamingDatas = value;
-                  isLoading = false;
+        return SizedBox(
+          height: isLandscape ? MediaQuery.of(context).size.height * 1 : MediaQuery.of(context).size.height * 0.563,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              // Run once
+              if (isLoading) {
+                executor!.getEpisodeStreamData(url).then((value) {
+                  setState(() {
+                    streamingDatas = value;
+                    isLoading = false;
+                  });
                 });
-              });
-            }
+              }
 
-            return Padding(
-              padding: EdgeInsetsGeometry.all(16),
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator(color: scheme.tertiary))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 16,
-                      children: [
-                        Text(
-                          "Available Streams:",
-                          style: TextStyle(
-                            //color: MyColors.appbarTextColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16.5,
+              return Padding(
+                padding: EdgeInsetsGeometry.all(16),
+                child: isLoading
+                    ? Center(child: CircularProgressIndicator(color: scheme.tertiary))
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 16,
+                        children: [
+                          Text(
+                            "Available Streams:",
+                            style: TextStyle(
+                              //color: MyColors.appbarTextColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16.5,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: ListView.separated(
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
-                            itemCount: streamingDatas.length,
-                            itemBuilder: (context, index) {
-                              final streamingData = streamingDatas[index];
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: scheme.onSecondary,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                width: double.infinity,
-                                height: 60,
-                                padding: const EdgeInsets.only(right: 12, left: 12),
+                          Expanded(
+                            child: ListView.separated(
+                              separatorBuilder: (context, index) => const SizedBox(height: 12),
+                              itemCount: streamingDatas.length,
+                              itemBuilder: (context, index) {
+                                final streamingData = streamingDatas[index];
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: scheme.onSecondary,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  width: double.infinity,
+                                  height: 60,
+                                  padding: const EdgeInsets.only(right: 12, left: 12),
 
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
-                                      style: const TextStyle(
-                                        //color: MyColors.appbarTextColor,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16.5,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
+                                        style: const TextStyle(
+                                          //color: MyColors.appbarTextColor,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16.5,
+                                        ),
                                       ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        //download button
-                                        IconButton(
-                                          onPressed: () {
-                                            debugPrint("download started!");
-                                          },
-                                          icon: const Icon(
-                                            Icons.download,
-                                            //color: MyColors.appbarTextColor,
+                                      Row(
+                                        children: [
+                                          //download button
+                                          IconButton(
+                                            onPressed: () {
+                                              debugPrint("download started!");
+                                            },
+                                            icon: const Icon(
+                                              Icons.download,
+                                              //color: MyColors.appbarTextColor,
+                                            ),
                                           ),
-                                        ),
-                                        //watch button
-                                        IconButton(
-                                          onPressed: () async {
-                                            // Navigator.of(context).pop();
+                                          //watch button
+                                          IconButton(
+                                            onPressed: () async {
+                                              // Navigator.of(context).pop();
 
-                                            await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => PlayerPage(
-                                                  episodeList: episodeList,
-                                                  animeStreamingData: streamingData,
-                                                  mediaListEntry: widget.anime,
-                                                  animeData: matchedAnime!,
-                                                  episodeData: episodeList.where((element) => element.url == url).first,
+                                              await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => PlayerPage(
+                                                    episodeList: episodeList,
+                                                    animeStreamingData: streamingData,
+                                                    mediaListEntry: widget.anime,
+                                                    animeData: matchedAnime!,
+                                                    episodeData: episodeList
+                                                        .where((element) => element.url == url)
+                                                        .first,
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                            seetState();
+                                              );
+                                              seetState();
 
-                                            // Navigator.pop(context);
-                                            // if (result == "setState") {
-                                            //   onDone();
-                                            // }
-                                          },
-                                          icon: const Icon(
-                                            Icons.play_arrow,
-                                            //color: MyColors.appbarTextColor,
+                                              // Navigator.pop(context);
+                                              // if (result == "setState") {
+                                              //   onDone();
+                                              // }
+                                            },
+                                            icon: const Icon(
+                                              Icons.play_arrow,
+                                              //color: MyColors.appbarTextColor,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-            );
-          },
+                        ],
+                      ),
+              );
+            },
+          ),
         );
       },
     );
@@ -414,137 +422,142 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     showModalBottomSheet(
       backgroundColor: Theme.of(context).colorScheme.surface,
       context: context,
-      //isScrollControlled: true,
+      //isScrollControlled: isLandscape ? true : false,
+      isScrollControlled: true,
       builder: (context) {
-        return LayoutBuilder(
-          builder: (context, boxConstraints) {
-            return StatefulBuilder(
-              builder: (context, setState) {
-                // Initial fetch, only once
-                if (!hasFetched) {
-                  hasFetched = true;
-                  Future.microtask(() async {
-                    final value = await executor!.searchAnime(keyword);
+        isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+        return SizedBox(
+          height: isLandscape ? MediaQuery.of(context).size.height * 1 : MediaQuery.of(context).size.height * 0.563,
+          child: LayoutBuilder(
+            builder: (context, boxConstraints) {
+              return StatefulBuilder(
+                builder: (context, setState) {
+                  // Initial fetch, only once
+                  if (!hasFetched) {
+                    hasFetched = true;
+                    Future.microtask(() async {
+                      final value = await executor!.searchAnime(keyword);
+                      setState(() {
+                        animes = value;
+                        isLoading = false;
+                      });
+                    });
+                  }
+
+                  Future<void> search(String query) async {
+                    setState(() => isLoading = true);
+                    final value = await executor!.searchAnime(query);
                     setState(() {
                       animes = value;
                       isLoading = false;
                     });
-                  });
-                }
+                  }
 
-                Future<void> search(String query) async {
-                  setState(() => isLoading = true);
-                  final value = await executor!.searchAnime(query);
-                  setState(() {
-                    animes = value;
-                    isLoading = false;
-                  });
-                }
-
-                return Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: searchController,
-                        textInputAction: TextInputAction.search,
-                        decoration: InputDecoration(
-                          labelText: 'Search Anime',
-                          hintText: 'Enter anime name',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  return Padding(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: searchController,
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            labelText: 'Search Anime',
+                            hintText: 'Enter anime name',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onSubmitted: (value) {
+                            if (value.trim().isNotEmpty) {
+                              search(value.trim());
+                            }
+                          },
                         ),
-                        onSubmitted: (value) {
-                          if (value.trim().isNotEmpty) {
-                            search(value.trim());
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: isLoading
-                            ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.tertiary))
-                            : GridView.builder(
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: Tools.getResponsiveCrossAxisVal(
-                                    boxConstraints.maxWidth,
-                                    itemWidth: 135,
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: isLoading
+                              ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.tertiary))
+                              : GridView.builder(
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: Tools.getResponsiveCrossAxisVal(
+                                      boxConstraints.maxWidth,
+                                      itemWidth: 135,
+                                    ),
+                                    mainAxisExtent: 268,
+                                    childAspectRatio: 0.7,
                                   ),
-                                  mainAxisExtent: 268,
-                                  childAspectRatio: 0.7,
-                                ),
-                                itemCount: animes.length,
-                                itemBuilder: (context, index) {
-                                  final poster = animes[index].poster;
-                                  final name = animes[index].name;
+                                  itemCount: animes.length,
+                                  itemBuilder: (context, index) {
+                                    final poster = animes[index].poster;
+                                    final name = animes[index].name;
 
-                                  return GestureDetector(
-                                    onTap: () async {
-                                      await animeDatabaseService.updateAnimeDatabases(
-                                        animes[index],
-                                        widget.anime.media.id,
-                                        runtime.extensionServices.mainExtension!.id,
-                                      );
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Card(
-                                      child: Stack(
-                                        children: [
-                                          Align(
-                                            alignment: Alignment.center,
-                                            child: SizedBox(
-                                              width: 135,
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                                children: [
-                                                  SizedBox(
-                                                    height: 183,
-                                                    width: 135,
-                                                    child: ClipRRect(
-                                                      borderRadius: BorderRadius.circular(12),
-                                                      child: CachedNetworkImage(
-                                                        imageUrl: poster,
-                                                        fit: BoxFit.cover,
-                                                        placeholder: (context, url) => const Center(
-                                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                    return GestureDetector(
+                                      onTap: () async {
+                                        await animeDatabaseService.updateAnimeDatabases(
+                                          animes[index],
+                                          widget.anime.media.id,
+                                          runtime.extensionServices.mainExtension!.id,
+                                        );
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Card(
+                                        child: Stack(
+                                          children: [
+                                            Align(
+                                              alignment: Alignment.center,
+                                              child: SizedBox(
+                                                width: 135,
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                  children: [
+                                                    SizedBox(
+                                                      height: 183,
+                                                      width: 135,
+                                                      child: ClipRRect(
+                                                        borderRadius: BorderRadius.circular(12),
+                                                        child: CachedNetworkImage(
+                                                          imageUrl: poster,
+                                                          fit: BoxFit.cover,
+                                                          placeholder: (context, url) => const Center(
+                                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                                          ),
+                                                          errorWidget: (context, url, error) => const Icon(Icons.error),
                                                         ),
-                                                        errorWidget: (context, url, error) => const Icon(Icons.error),
                                                       ),
                                                     ),
-                                                  ),
-                                                  const SizedBox(height: 5),
-                                                  Expanded(
-                                                    child: Center(
-                                                      child: Text(
-                                                        name,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        maxLines: 2,
-                                                        style: TextStyle(
-                                                          color: Theme.of(context).colorScheme.primary,
-                                                          fontWeight: FontWeight.w600,
-                                                          fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
+                                                    const SizedBox(height: 5),
+                                                    Expanded(
+                                                      child: Center(
+                                                        child: Text(
+                                                          name,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          maxLines: 2,
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.primary,
+                                                            fontWeight: FontWeight.w600,
+                                                            fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
+                                                          ),
+                                                          textAlign: TextAlign.center,
                                                         ),
-                                                        textAlign: TextAlign.center,
                                                       ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         );
       },
     );
@@ -560,6 +573,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     currentExtensions = runtime.extensionServices.currentExtensions;
 
     List<MediaListGroup> userLIb = Provider.of<UserProvider>(context, listen: false).user.userLibrary.library;
@@ -1277,7 +1291,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         children: [
                           // Title
                           Text(
-                            widget.anime.media.title.english ?? widget.anime.media.title.romaji ?? widget.anime.media.title.native ?? "No Title",
+                            widget.anime.media.title.english ??
+                                widget.anime.media.title.romaji ??
+                                widget.anime.media.title.native ??
+                                "No Title",
                             style: TextStyle(
                               color: scheme.onBackground, // instead of Colors.white
                               fontSize: 36,

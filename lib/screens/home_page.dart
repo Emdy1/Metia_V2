@@ -24,43 +24,47 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin, WidgetsBindingObserver {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late TabController _tabController;
   StreamSubscription<Uri>? _linkSubscription;
-
-  //final List<Widget> _tabs = [LibraryPage(), ExplorerPage(), ProfilePage()];
-  bool isLandscpae = false;
-
-  
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    if (state == AppLifecycleState.resumed) {
-      // App has resumed
-      print("App resumed");
-    }
-  }
+  int _tabLength = 3;
 
   @override
   void initState() {
     super.initState();
-    context.read<ExtensionServices>().getExtensions();
-    _tabController = TabController(
-      length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn) ? 4 : 3,
-      vsync: this,
-    );
-    Provider.of<UserProvider>(context, listen: false).addListener(() {
-      _tabController = TabController(
-        length: (Provider.of<UserProvider>(context, listen: false).isLoggedIn) ? 4 : 3,
-        vsync: this,
-      );
-    });
+    final isLoggedIn = Provider.of<UserProvider>(context, listen: false).isLoggedIn;
+    _tabLength = isLoggedIn ? 4 : 3;
+
+    Provider.of<ExtensionServices>(context, listen: false).getExtensions();
+    _tabController = TabController(length: _tabLength, vsync: this);
+
+    // Listen to login state changes
+    Provider.of<UserProvider>(context, listen: false).addListener(_onLoginStateChanged);
     initDeepLinks();
+  }
+
+  void _onLoginStateChanged() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final newLength = userProvider.isLoggedIn ? 4 : 3;
+
+    if (newLength != _tabLength) {
+      final oldIndex = _tabController.index;
+      _tabController.dispose();
+      _tabLength = newLength;
+      _tabController = TabController(length: _tabLength, vsync: this);
+
+      // Preserve the tab index if possible
+      if (oldIndex < _tabLength) {
+        _tabController.index = oldIndex;
+      }
+
+      if (mounted) setState(() {});
+    }
   }
 
   @override
   void dispose() {
+    Provider.of<UserProvider>(context, listen: false).removeListener(_onLoginStateChanged);
     _linkSubscription?.cancel();
     _tabController.dispose();
     super.dispose();
@@ -92,157 +96,171 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Widg
           if (mounted) {
             Provider.of<UserProvider>(context, listen: false).logIn(responseData['access_token'].toString());
           } else {
-            Logger.log(
-              'not mounted',
-              level: 'INFO',
-              details: 'the \'if\' conition that check if mounted to log in the user by his access token isn/t true',
-            );
+            Logger.log('not mounted', level: 'INFO', details: 'Widget not mounted when trying to log in user');
           }
         } else {
-          throw Logger.log('Failed to retrieve access token: ${response.body}', level: 'ERROR');
+          Logger.log('Failed to retrieve access token: ${response.body}', level: 'ERROR');
         }
       } catch (e) {
-        throw Logger.log('Request failed: $e', level: 'ERROR');
+        Logger.log('Request failed: $e', level: 'ERROR');
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    isLandscpae = MediaQuery.of(context).orientation == Orientation.landscape;
-    return Scaffold(
-      appBar: AppBar(
-        surfaceTintColor: Colors.transparent,
-        backgroundColor: Colors.transparent,
-        actions: [
-          Theme(
-            data: Theme.of(context).copyWith(
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              splashFactory: NoSplash.splashFactory,
-            ),
-            child: (Provider.of<UserProvider>(context).isLoggedIn)
-                ? PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      _switchMenuButtons(value, context);
-                    },
-                    itemBuilder: (BuildContext context) => _loggedMenuItemList(context),
-                  )
-                : PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      _switchMenuButtons(value, context);
-                    },
-                    itemBuilder: (BuildContext context) => _defaultMenuItemList(),
-                  ),
-          ),
-        ],
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8.0),
-            child: SvgPicture.asset('assets/icons/logo.svg', height: 24, width: 24),
-          ),
-        ),
-        title: const Text('Metia'),
-      ),
+    return Scaffold(
+      appBar: _buildAppBar(),
       body: Row(
         children: [
-          if (isLandscpae)
-            Theme(
-              data: Theme.of(context).copyWith(
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                splashFactory: NoSplash.splashFactory,
-              ),
-              child: NavigationRail(
-                selectedIndex: _tabController.index,
-                onDestinationSelected: (index) {
-                  setState(() {
-                    _tabController.index = index;
-                  });
-                },
-                labelType: NavigationRailLabelType.all,
-                destinations: [
-                  if (Provider.of<UserProvider>(context).isLoggedIn)
-                    NavigationRailDestination(icon: Icon(Icons.home), label: Text('Library')),
-                  NavigationRailDestination(icon: Icon(Icons.explore), label: Text('Explore')),
-                  NavigationRailDestination(icon: Icon(Icons.history), label: Text('History')),
-                  NavigationRailDestination(icon: Icon(Icons.person), label: Text('Profile')),
-                ],
-              ),
-            ),
-          if (isLandscpae) VerticalDivider(thickness: 1),
-
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                if (Provider.of<UserProvider>(context).isLoggedIn) LibraryPage(),
-                ExplorerPage(),
-                HistoryPage(),
-                ProfilePage(),
-              ],
-            ),
-          ),
+          if (isLandscape) _buildNavigationRail(),
+          if (isLandscape) const VerticalDivider(thickness: 1),
+          Expanded(child: _buildTabBarView()),
         ],
       ),
+      bottomNavigationBar: !isLandscape ? _buildBottomNavigationBar() : null,
+    );
+  }
 
-      bottomNavigationBar: !isLandscpae
-          ? Theme(
-              data: Theme.of(context).copyWith(
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                splashFactory: NoSplash.splashFactory,
-              ),
-              child: BottomNavigationBar(
-                currentIndex: _tabController.index,
-                onTap: (index) {
-                  setState(() {
-                    _tabController.index = index;
-                  });
-                },
-                items: [
-                  if (Provider.of<UserProvider>(context).isLoggedIn)
-                    BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Library'),
-                  BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explore'),
-                  BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-                ],
-                type: BottomNavigationBarType.fixed,
-              ),
-            )
-          : SizedBox(),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      surfaceTintColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      actions: [_AppBarMenu()],
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.0),
+          child: SvgPicture.asset('assets/icons/logo.svg', height: 24, width: 24),
+        ),
+      ),
+      title: const Text('Metia'),
+    );
+  }
+
+  Widget _buildNavigationRail() {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+      ),
+      child: Selector<UserProvider, bool>(
+        selector: (_, provider) => provider.isLoggedIn,
+        builder: (context, isLoggedIn, _) {
+          return NavigationRail(
+            selectedIndex: _tabController.index,
+            onDestinationSelected: (index) {
+              setState(() => _tabController.index = index);
+            },
+            labelType: NavigationRailLabelType.all,
+            destinations: [
+              if (isLoggedIn) const NavigationRailDestination(icon: Icon(Icons.home), label: Text('Library')),
+              const NavigationRailDestination(icon: Icon(Icons.explore), label: Text('Explore')),
+              const NavigationRailDestination(icon: Icon(Icons.history), label: Text('History')),
+              const NavigationRailDestination(icon: Icon(Icons.person), label: Text('Profile')),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+      ),
+      child: Selector<UserProvider, bool>(
+        selector: (_, provider) => provider.isLoggedIn,
+        builder: (context, isLoggedIn, _) {
+          return BottomNavigationBar(
+            currentIndex: _tabController.index,
+            onTap: (index) => setState(() => _tabController.index = index),
+            items: [
+              if (isLoggedIn) const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Library'),
+              const BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explore'),
+              const BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+              const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            ],
+            type: BottomNavigationBarType.fixed,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTabBarView() {
+    return Selector<UserProvider, bool>(
+      selector: (_, provider) => provider.isLoggedIn,
+      builder: (context, isLoggedIn, _) {
+        return TabBarView(
+          controller: _tabController,
+          physics: const NeverScrollableScrollPhysics(), // Prevent swipe interference
+          children: [
+            if (isLoggedIn) const LibraryPage(),
+            const ExplorerPage(),
+            const HistoryPage(),
+            const ProfilePage(),
+          ],
+        );
+      },
     );
   }
 }
 
-_defaultMenuItemList() {
-  return [
-    const PopupMenuItem<String>(enabled: true, height: 36, value: 'logs', child: Text('Logs')),
-    const PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
-    const PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
+// Separate widget for AppBar menu to prevent unnecessary rebuilds
+class _AppBarMenu extends StatelessWidget {
+  const _AppBarMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+      ),
+      child: Selector<UserProvider, bool>(
+        selector: (_, provider) => provider.isLoggedIn,
+        builder: (context, isLoggedIn, _) {
+          return PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) => _switchMenuButtons(value, context),
+            itemBuilder: (BuildContext context) => isLoggedIn ? _loggedMenuItemList(context) : _defaultMenuItemList(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+List<PopupMenuEntry<String>> _defaultMenuItemList() {
+  return const [
+    PopupMenuItem<String>(enabled: true, height: 36, value: 'logs', child: Text('Logs')),
+    PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
+    PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
   ];
 }
 
-_loggedMenuItemList(BuildContext context) {
+List<PopupMenuEntry<String>> _loggedMenuItemList(BuildContext context) {
+  final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+
   return [
     const PopupMenuItem<String>(enabled: false, height: 36, child: Text('Library')),
     const PopupMenuItem<String>(value: 'refresh', height: 36, child: Text('Refresh')),
     const PopupMenuItem<String>(value: 'createList', height: 36, child: Text('Create a New List')),
-
-    const PopupMenuItem<String>(height: 36, enabled: false, child: Text('Explorer')),
-    const PopupMenuItem<String>(value: 'changeSource', height: 36, child: Text('Change Source')),
-
     const PopupMenuItem<String>(height: 36, enabled: false, child: Text('Profile', textAlign: TextAlign.end)),
     const PopupMenuItem<String>(value: 'logout', height: 36, child: Text('Log Out')),
     const PopupMenuItem<String>(height: 36, enabled: false, child: Text('General', textAlign: TextAlign.end)),
     PopupMenuItem<String>(
       value: 'revertTheme',
       height: 36,
-      child: Text('Swith to ${Provider.of<ThemeProvider>(context, listen: false).isDarkMode ? "Light" : "Dark"} Mode'),
+      child: Text('Switch to ${isDarkMode ? "Light" : "Dark"} Mode'),
     ),
     const PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
     const PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
@@ -250,30 +268,95 @@ _loggedMenuItemList(BuildContext context) {
   ];
 }
 
-_switchMenuButtons(value, context) {
+void _switchMenuButtons(String value, BuildContext context) {
   switch (value) {
     case 'extensions':
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ExtensionsPage()));
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ExtensionsPage()));
       break;
     case 'logs':
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) => LoggingPage()));
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoggingPage()));
       break;
     case 'logout':
       Provider.of<UserProvider>(context, listen: false).logOut();
       break;
     case 'refresh':
+      Provider.of<UserProvider>(context, listen: false).reloadUserData();
       break;
     case 'createList':
-      break;
-    case 'changeSource':
+      _showCreateCustomListDialog(
+        context,
+        onAdd: (name) async {
+          try {
+            await Provider.of<UserProvider>(context, listen: false).createCustomList(name);
+            await Provider.of<UserProvider>(context, listen: false).reloadUserData();
+            return true;
+          } catch (_) {
+            return false;
+          }
+        },
+      );
       break;
     case 'revertTheme':
-      bool isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
-
-      if (isDarkMode) {
-        Provider.of<ThemeProvider>(context, listen: false).setLightMode();
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      if (themeProvider.isDarkMode) {
+        themeProvider.setLightMode();
       } else {
-        Provider.of<ThemeProvider>(context, listen: false).setDarkMode();
+        themeProvider.setDarkMode();
       }
+      break;
   }
+}
+
+void _showCreateCustomListDialog(BuildContext context, {required Future<bool> Function(String) onAdd}) {
+  final TextEditingController textController = TextEditingController();
+  bool hasError = false;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      textController.clear();
+      hasError = false;
+
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Create New Custom List'),
+            content: TextField(
+              controller: textController,
+              decoration: InputDecoration(
+                labelText: 'List Name',
+                errorText: hasError ? 'Name cannot be empty or already exists' : null,
+              ),
+              autofocus: true,
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: () async {
+                  final name = textController.text.trim();
+                  if (name.isEmpty) {
+                    setState(() {
+                      hasError = true;
+                    });
+                    return;
+                  }
+
+                  final success = await onAdd(name);
+
+                  if (success) {
+                    Navigator.pop(context); // close dialog
+                  } else {
+                    setState(() {
+                      hasError = true; // 🔴 show error
+                    });
+                  }
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }

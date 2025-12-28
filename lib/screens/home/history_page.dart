@@ -51,122 +51,126 @@ class _HistoryPageState extends State<HistoryPage> {
     await showModalBottomSheet(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            // Run once
-            if (isLoading) {
-              executor!.getEpisodeStreamData(url).then((value) {
-                setState(() {
-                  streamingDatas = value;
-                  isLoading = false;
+        bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+        return SizedBox(
+          height: isLandscape ? MediaQuery.of(context).size.height * 1 : MediaQuery.of(context).size.height * 0.563,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              // Run once
+              if (isLoading) {
+                executor!.getEpisodeStreamData(url).then((value) {
+                  setState(() {
+                    streamingDatas = value;
+                    isLoading = false;
+                  });
                 });
-              });
-            }
+              }
 
-            return Padding(
-              padding: EdgeInsetsGeometry.all(16),
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator(color: scheme.tertiary))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 16,
-                      children: [
-                        Text(
-                          "Available Streams:",
-                          style: TextStyle(
-                            //color: MyColors.appbarTextColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16.5,
+              return Padding(
+                padding: EdgeInsetsGeometry.all(16),
+                child: isLoading
+                    ? Center(child: CircularProgressIndicator(color: scheme.tertiary))
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 16,
+                        children: [
+                          Text(
+                            "Available Streams:",
+                            style: TextStyle(
+                              //color: MyColors.appbarTextColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16.5,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: ListView.separated(
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
-                            itemCount: streamingDatas.length,
-                            itemBuilder: (context, index) {
-                              final streamingData = streamingDatas[index];
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: scheme.onSecondary,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                width: double.infinity,
-                                height: 60,
-                                padding: const EdgeInsets.only(right: 12, left: 12),
+                          Expanded(
+                            child: ListView.separated(
+                              separatorBuilder: (context, index) => const SizedBox(height: 12),
+                              itemCount: streamingDatas.length,
+                              itemBuilder: (context, index) {
+                                final streamingData = streamingDatas[index];
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: scheme.onSecondary,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  width: double.infinity,
+                                  height: 60,
+                                  padding: const EdgeInsets.only(right: 12, left: 12),
 
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
-                                      style: const TextStyle(
-                                        //color: MyColors.appbarTextColor,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16.5,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
+                                        style: const TextStyle(
+                                          //color: MyColors.appbarTextColor,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16.5,
+                                        ),
                                       ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        //download button
-                                        IconButton(
-                                          onPressed: () {
-                                            debugPrint("download started!");
-                                          },
-                                          icon: const Icon(
-                                            Icons.download,
-                                            //color: MyColors.appbarTextColor,
+                                      Row(
+                                        children: [
+                                          //download button
+                                          IconButton(
+                                            onPressed: () {
+                                              debugPrint("download started!");
+                                            },
+                                            icon: const Icon(
+                                              Icons.download,
+                                              //color: MyColors.appbarTextColor,
+                                            ),
                                           ),
-                                        ),
-                                        //watch button
-                                        IconButton(
-                                          onPressed: () async {
-                                            // Navigator.of(context).pop();
+                                          //watch button
+                                          IconButton(
+                                            onPressed: () async {
+                                              // Navigator.of(context).pop();
 
-                                            await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => PlayerPage(
-                                                  episodeList: history[index].parentList!,
-                                                  animeStreamingData: streamingData,
-                                                  mediaListEntry: MediaListEntry(
-                                                    id: 0,
-                                                    status: "CURRENT",
-                                                    media: Media.fromJson({
-                                                      "id": history[index].anilistMeidaId!,
-                                                      "title": {"english": animeTitle},
-                                                    }),
+                                              await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => PlayerPage(
+                                                    episodeList: history[index].parentList!,
+                                                    animeStreamingData: streamingData,
+                                                    mediaListEntry: MediaListEntry(
+                                                      id: 0,
+                                                      status: "CURRENT",
+                                                      media: Media.fromJson({
+                                                        "id": history[index].anilistMeidaId!,
+                                                        "title": {"english": animeTitle},
+                                                      }),
+                                                    ),
+                                                    animeData: history[index].anime!,
+                                                    episodeData: history[index].parentList!
+                                                        .where((element) => element.url == url)
+                                                        .first,
                                                   ),
-                                                  animeData: history[index].anime!,
-                                                  episodeData: history[index].parentList!
-                                                      .where((element) => element.url == url)
-                                                      .first,
                                                 ),
-                                              ),
-                                            );
-                                            seetState();
+                                              );
+                                              seetState();
 
-                                            // Navigator.pop(context);
-                                            // if (result == "setState") {
-                                            //   onDone();
-                                            // }
-                                          },
-                                          icon: const Icon(
-                                            Icons.play_arrow,
-                                            //color: MyColors.appbarTextColor,
+                                              // Navigator.pop(context);
+                                              // if (result == "setState") {
+                                              //   onDone();
+                                              // }
+                                            },
+                                            icon: const Icon(
+                                              Icons.play_arrow,
+                                              //color: MyColors.appbarTextColor,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-            );
-          },
+                        ],
+                      ),
+              );
+            },
+          ),
         );
       },
     );

@@ -9,9 +9,7 @@ import 'package:metia/models/theme_provider.dart';
 import 'package:provider/provider.dart';
 
 class Tools {
-  static Future<String> fetchAniListAccessToken(
-    String authorizationCode,
-  ) async {
+  static Future<String> fetchAniListAccessToken(String authorizationCode) async {
     final Uri tokenEndpoint = Uri.https('anilist.co', '/api/v2/oauth/token');
     final Map<String, String> payload = {
       'grant_type': 'authorization_code',
@@ -70,275 +68,167 @@ class Tools {
     return original.substring(0, index) + toInsert + original.substring(index);
   }
 
-  static transferToAnotherList(
-    MediaListEntry anime,
-    BuildContext context,
-    bool shouldPopOnceMore,
-  ) {
-    showModalBottomSheet(
+  static Future<bool> transferToAnotherList(MediaListEntry anime, BuildContext context, bool shouldPopOnceMore) async {
+    final result = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
         bool isLoading = false;
+        final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              ),
-              child: Scaffold(
-                floatingActionButton: FloatingActionButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        TextEditingController _listNameController =
-                            TextEditingController();
-                        return AlertDialog(
-                          title: const Text('Create New Custom List'),
-                          content: TextField(
-                            controller: _listNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'List Name',
+        return SizedBox(
+          height: isLandscape ? MediaQuery.of(context).size.height : MediaQuery.of(context).size.height * 0.563,
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              return ClipRRect(
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(25), topRight: Radius.circular(25)),
+                child: Scaffold(
+                  floatingActionButton: FloatingActionButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) {
+                          final TextEditingController listNameController = TextEditingController();
+
+                          return AlertDialog(
+                            title: const Text('Create New Custom List'),
+                            content: TextField(
+                              controller: listNameController,
+                              decoration: const InputDecoration(labelText: 'List Name'),
                             ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(dialogContext).pop();
+                                },
+                                child: const Text('Cancel'),
                               ),
-                              onPressed: () async {
-                                String newListName = _listNameController.text
-                                    .trim();
-                                if (newListName.isNotEmpty) {
-                                  await Provider.of<UserProvider>(
-                                    context,
-                                    listen: false,
-                                  ).createCustomList(newListName);
-                                  await Provider.of<UserProvider>(
-                                    context,
-                                    listen: false,
-                                  ).reloadUserData();
-                                  Navigator.of(context).pop();
-                                  if (shouldPopOnceMore)
-                                    Navigator.of(context).pop();
-                                }
-                              },
-                              child: const Text('Add'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  child: Icon(Icons.add),
-                ),
-                body: Stack(
-                  children: [
-                    AbsorbPointer(
-                      absorbing: isLoading, // disables all taps
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Select the List:",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                                onPressed: () async {
+                                  final name = listNameController.text.trim();
+                                  if (name.isEmpty) return;
+
+                                  try {
+                                    await Provider.of<UserProvider>(context, listen: false).createCustomList(name);
+
+                                    await Provider.of<UserProvider>(context, listen: false).reloadUserData();
+
+                                    Navigator.of(dialogContext).pop();
+                                  } catch (_) {
+                                    Navigator.of(dialogContext).pop();
+                                  }
+                                },
+                                child: const Text('Add'),
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Expanded(
-                              child: ListView.separated(
-                                itemBuilder: (context, index) {
-                                  Map listDetails = Provider.of<UserProvider>(
-                                    context,
-                                  ).user.userLists[index];
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    child: const Icon(Icons.add),
+                  ),
+                  body: Stack(
+                    children: [
+                      AbsorbPointer(
+                        absorbing: isLoading,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              const Text(
+                                "Select the List:",
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 10),
+                              Expanded(
+                                child: ListView.separated(
+                                  itemCount: Provider.of<UserProvider>(context).user.userLists.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                  itemBuilder: (context, index) {
+                                    final Map listDetails = Provider.of<UserProvider>(context).user.userLists[index];
 
-                                  bool isCurrent =
-                                      listDetails["name"]
-                                          .toString()
-                                          .toLowerCase() ==
-                                      anime.getGroup()!.name.toLowerCase();
+                                    final bool isCurrent =
+                                        listDetails["name"].toString().toLowerCase() ==
+                                        anime.getGroup()!.name.toLowerCase();
 
-                                  return SizedBox(
-                                    height: 50,
-                                    child: Opacity(
-                                      opacity: isCurrent ? 0.5 : 1,
-                                      child: ElevatedButton(
-                                        onLongPress: () {
-                                          if (listDetails["isCustom"] == true) {
-                                            showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return AlertDialog(
-                                                  title: const Text(
-                                                    'Delete Custom List',
-                                                  ),
-                                                  content: Text(
-                                                    'Are you sure you want to delete the custom list "${listDetails["name"]}"? This action cannot be undone.',
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop();
-                                                      },
-                                                      child: const Text(
-                                                        'Cancel',
-                                                      ),
-                                                    ),
-                                                    ElevatedButton(
-                                                      style:
-                                                          ElevatedButton.styleFrom(
-                                                            backgroundColor:
-                                                                Colors.red,
-                                                          ),
-                                                      onPressed: () async {
-                                                        setModalState(
-                                                          () =>
-                                                              isLoading = true,
-                                                        );
-                                                        await Provider.of<
-                                                              UserProvider
-                                                            >(
-                                                              context,
-                                                              listen: false,
-                                                            )
-                                                            .deleteCustomList(
-                                                              listDetails["name"],
-                                                            );
-                                                        await Provider.of<
-                                                              UserProvider
-                                                            >(
-                                                              context,
-                                                              listen: false,
-                                                            )
-                                                            .reloadUserData();
-                                                        Navigator.of(
-                                                          context,
-                                                        ).pop(); // close dialog
-                                                        setModalState(
-                                                          () =>
-                                                              isLoading = false,
-                                                        );
-                                                      },
-                                                      child: Text(
-                                                        'Delete',
-                                                        style: TextStyle(
-                                                          color:
-                                                              Provider.of<
-                                                                    ThemeProvider
-                                                                  >(
-                                                                    context,
-                                                                    listen:
-                                                                        false,
-                                                                  )
-                                                                  .isDarkMode
-                                                              ? Colors.white
-                                                              : Colors.black,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
-                                            );
-                                          }
-                                        },
-                                        onPressed: isCurrent
-                                            ? null
-                                            : () async {
-                                                setModalState(
-                                                  () => isLoading = true,
-                                                );
+                                    return SizedBox(
+                                      height: 50,
+                                      child: Opacity(
+                                        opacity: isCurrent ? 0.5 : 1,
+                                        child: ElevatedButton(
+                                          onPressed: isCurrent
+                                              ? null
+                                              : () async {
+                                                  try {
+                                                    setModalState(() => isLoading = true);
 
-                                                await anime
-                                                    .getGroup()!
-                                                    .changeEntryStatus(
+                                                    await anime.getGroup()!.changeEntryStatus(
                                                       context,
                                                       anime,
                                                       listDetails["name"],
                                                       listDetails["isCustom"],
                                                     );
 
-                                                await Provider.of<UserProvider>(
-                                                  context,
-                                                  listen: false,
-                                                ).reloadUserData();
+                                                    await Provider.of<UserProvider>(
+                                                      context,
+                                                      listen: false,
+                                                    ).reloadUserData();
 
-                                                if (context.mounted) {
-                                                  Navigator.of(
-                                                    context,
-                                                  ).pop(); // pop modal
-                                                }
-                                                if (shouldPopOnceMore)
-                                                  Navigator.of(context).pop();
-                                              },
-                                        child: Stack(
-                                          children: [
-                                            Center(
-                                              child: Text(
-                                                listDetails["name"],
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
+                                                    if (context.mounted) {
+                                                      Navigator.of(context).pop(true); // ✅ SUCCESS
+                                                    }
+
+                                                    if (shouldPopOnceMore) {
+                                                      Navigator.of(context).pop();
+                                                    }
+                                                  } catch (_) {
+                                                    if (context.mounted) {
+                                                      Navigator.of(context).pop(false); // ❌ ERROR
+                                                    }
+                                                  }
+                                                },
+                                          child: Stack(
+                                            children: [
+                                              Center(
+                                                child: Text(
+                                                  listDetails["name"],
+                                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                                 ),
                                               ),
-                                            ),
-                                            if (isCurrent)
-                                              const Align(
-                                                alignment:
-                                                    Alignment.centerRight,
-                                                child: Icon(Icons.check),
-                                              ),
-                                          ],
+                                              if (isCurrent)
+                                                const Align(alignment: Alignment.centerRight, child: Icon(Icons.check)),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 10),
-                                itemCount: Provider.of<UserProvider>(
-                                  context,
-                                ).user.userLists.length,
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // LOADING INDICATOR OVERLAY
-                    if (isLoading)
-                      Positioned.fill(
-                        child: Container(
-                          color: Colors.black.withOpacity(0.3),
-                          child: const Center(
-                            child: CircularProgressIndicator(),
+                            ],
                           ),
                         ),
                       ),
-                  ],
+                      if (isLoading)
+                        Positioned.fill(
+                          child: Container(
+                            color: Colors.black.withOpacity(0.3),
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
+
+    // Swipe-down / back button / cancel → false
+    return result ?? false;
   }
 
   static Future<void> updateAnimeTracking({
@@ -370,10 +260,7 @@ class Tools {
 
     final response = await http.post(
       Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $accessToken',
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $accessToken'},
       body: jsonEncode({'query': mutation, 'variables': variables}),
     );
 

@@ -38,18 +38,12 @@ class MediaListGroup {
       color: json['name'] == "Watching"
           ? Colors.green
           : json['name'] == "Airing"
-              ? Colors.orange
-              : Colors.white,
+          ? Colors.orange
+          : Colors.white,
       isInteractive: true,
       name: json['name'],
       entries: [],
-      isCustom: ![
-        'Watching',
-        'Planning',
-        'Completed',
-        'Paused',
-        'Dropped',
-      ].contains(json['name']),
+      isCustom: !['Watching', 'Planning', 'Completed', 'Paused', 'Dropped'].contains(json['name']),
     );
 
     final parsedEntries = (json['entries'] as List).map((entryJson) {
@@ -73,15 +67,8 @@ class MediaListGroup {
     return loginProvider.getAuthKey();
   }
 
-  Future<void> addToCustomList(
-    BuildContext context,
-    MediaListEntry entry,
-    String customList,
-  ) async {
-    await Logger.log(
-      'addToCustomList called',
-      details: 'mediaId=${entry.media.id}, customList=$customList',
-    );
+  Future<void> addToCustomList(BuildContext context, MediaListEntry entry, String customList) async {
+    await Logger.log('addToCustomList called', details: 'mediaId=${entry.media.id}, customList=$customList');
     final authKey = await _getAuthKey(context);
     final url = Uri.parse('https://graphql.anilist.co');
 
@@ -180,31 +167,17 @@ class MediaListGroup {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $authKey',
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $authKey'},
       body: jsonEncode({'query': query, 'variables': variables}),
     );
 
     if (response.statusCode != 200) {
-      await Logger.log(
-        'Failed to add to custom list',
-        level: 'ERROR',
-        details: response.body,
-      );
+      await Logger.log('Failed to add to custom list', level: 'ERROR', details: response.body);
     }
   }
 
-  Future<void> addToStatusList(
-    BuildContext context,
-    int mediaId,
-    String status,
-  ) async {
-    await Logger.log(
-      'addToStatusList called',
-      details: 'mediaId=$mediaId, status=$status',
-    );
+  Future<void> addToStatusList(BuildContext context, int mediaId, String status) async {
+    await Logger.log('addToStatusList called', details: 'mediaId=$mediaId, status=$status');
     final authKey = await _getAuthKey(context);
     final url = Uri.parse('https://graphql.anilist.co');
 
@@ -233,27 +206,17 @@ class MediaListGroup {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $authKey',
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $authKey'},
       body: jsonEncode({'query': query, 'variables': variables}),
     );
 
     if (response.statusCode != 200) {
-      await Logger.log(
-        'Failed to add to status list',
-        level: 'ERROR',
-        details: response.body,
-      );
+      await Logger.log('Failed to add to status list', level: 'ERROR', details: response.body);
     }
   }
 
-  Future<void> deleteEntry(BuildContext context, int entryId) async {
-    await Logger.log(
-      'deleteEntry called',
-      details: 'entryId=$entryId',
-    );
+  Future<void> deleteMediaListEntry(BuildContext context, int mediaListEntryId) async {
+    await Logger.log('deleteEntry called', details: 'mediaListEntryId=$mediaListEntryId');
     final authKey = await _getAuthKey(context);
     final url = Uri.parse('https://graphql.anilist.co');
 
@@ -265,31 +228,20 @@ class MediaListGroup {
     }
     ''';
 
-    final variables = {'id': entryId};
+    final variables = {'id': mediaListEntryId};
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $authKey',
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $authKey'},
       body: jsonEncode({'query': query, 'variables': variables}),
     );
 
     if (response.statusCode != 200) {
-      await Logger.log(
-        'Failed to delete entry',
-        level: 'ERROR',
-        details: response.body,
-      );
+      await Logger.log('Failed to delete entry', level: 'ERROR', details: response.body);
     }
   }
 
-  static Future<void> changeFromCustomListToStatus(
-    int mediaId,
-    String customListName,
-    String statusName,
-  ) async {
+  static Future<void> changeFromCustomListToStatus(int mediaId, String customListName, String statusName) async {
     await Logger.log(
       'changeFromCustomListToStatus called',
       details: 'mediaId=$mediaId, customListName=$customListName, statusName=$statusName',
@@ -313,12 +265,7 @@ class MediaListGroup {
     await addToCustomList(context, entry, newCustomList);
   }
 
-  Future<void> changeEntryStatus(
-    BuildContext context,
-    MediaListEntry entry,
-    String listName,
-    bool isCustom,
-  ) async {
+  Future<void> changeEntryStatus(BuildContext context, MediaListEntry entry, String listName, bool isCustom) async {
     await Logger.log(
       'changeEntryStatus called',
       details: 'mediaId=${entry.media.id}, listName=$listName, isCustom=$isCustom',
@@ -343,33 +290,19 @@ class MediaListGroup {
           "Send the entry from not custom to status",
           details: 'mediaId=${entry.media.id}, listName=$listName',
         );
-        await addToStatusList(
-          context,
-          entry.media.id,
-          listName == "Watching" ? "CURRENT" : listName,
-        );
+        await addToStatusList(context, entry.media.id, listName == "Watching" ? "CURRENT" : listName);
       } else {
         await Logger.log(
           "Send the entry from not status to status",
           details: 'mediaId=${entry.media.id}, listName=$listName',
         );
-        await addToStatusList(
-          context,
-          entry.media.id,
-          listName == "Watching" ? "CURRENT" : listName,
-        );
+        await addToStatusList(context, entry.media.id, listName == "Watching" ? "CURRENT" : listName);
       }
     }
   }
 
-  Future<List<String>> _getCustomLists(
-    BuildContext context,
-    int mediaId,
-  ) async {
-    await Logger.log(
-      '_getCustomLists called',
-      details: 'mediaId=$mediaId',
-    );
+  Future<List<String>> _getCustomLists(BuildContext context, int mediaId) async {
+    await Logger.log('_getCustomLists called', details: 'mediaId=$mediaId');
     final authKey = await _getAuthKey(context);
     final url = Uri.parse('https://graphql.anilist.co');
 
@@ -385,10 +318,7 @@ class MediaListGroup {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $authKey',
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $authKey'},
       body: jsonEncode({
         'query': query,
         'variables': {'mediaId': mediaId},
@@ -397,17 +327,10 @@ class MediaListGroup {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final customListsMap =
-          data['data']['Media']['mediaListEntry']['customLists'];
-      return List<String>.from(
-        customListsMap?.keys.where((k) => customListsMap[k] == true) ?? [],
-      );
+      final customListsMap = data['data']['Media']['mediaListEntry']['customLists'];
+      return List<String>.from(customListsMap?.keys.where((k) => customListsMap[k] == true) ?? []);
     } else {
-      await Logger.log(
-        'Failed to get custom lists',
-        level: 'ERROR',
-        details: response.body,
-      );
+      await Logger.log('Failed to get custom lists', level: 'ERROR', details: response.body);
       return [];
     }
   }
@@ -423,12 +346,7 @@ class MediaListEntry {
   MediaListGroup? _group;
   MediaListGroup? getGroup() => _group;
 
-  MediaListEntry({
-    required this.id,
-    this.progress,
-    required this.status,
-    required this.media,
-  });
+  MediaListEntry({required this.id, this.progress, required this.status, required this.media});
 
   factory MediaListEntry.fromJson(Map<String, dynamic> json) {
     return MediaListEntry(

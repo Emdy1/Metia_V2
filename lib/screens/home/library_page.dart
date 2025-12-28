@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:metia/data/user/profile.dart';
@@ -18,13 +17,18 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage>
-    with TickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late TabController _tabController;
+  int _previousLibraryLength = 0;
+  int _savedTabIndex = 0;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
-    _tabController = TabController(length: 0, vsync: this);
     super.initState();
+    _tabController = TabController(length: 0, vsync: this);
   }
 
   @override
@@ -33,38 +37,66 @@ class _LibraryPageState extends State<LibraryPage>
     super.dispose();
   }
 
+  void _updateTabController(int newLength) {
+    if (newLength != _previousLibraryLength) {
+      _savedTabIndex = _tabController.index;
+      _tabController.dispose();
+      _tabController = TabController(length: newLength, vsync: this);
+
+      if (_savedTabIndex < newLength) {
+        _tabController.index = _savedTabIndex;
+      } else if (newLength > 0) {
+        _tabController.index = newLength - 1;
+      }
+
+      _previousLibraryLength = newLength;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    _tabController = TabController(
-      length: Provider.of<UserProvider>(
-        context,
-      ).user.userLibrary.library.length,
-      vsync: this,
-    );
+    super.build(context);
 
-    bool isLoggedIn = Provider.of<UserProvider>(context).isLoggedIn;
+    final userProvider = Provider.of<UserProvider>(context);
+    final isLoggedIn = userProvider.isLoggedIn;
+    final library = userProvider.user.userLibrary.library;
 
-    return Scaffold(
-      body: isLoggedIn
-          ? Provider.of<UserProvider>(context).user.userLibrary.library.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : Column(
-                    children: [
-                      Provider.of<UserProvider>(
-                            context,
-                          ).user.userLibrary.library.isNotEmpty
-                          ? _buildTabBar()
-                          : null,
-                      _buildLibraryGrid(),
-                    ],
-                  )
-          : const Center(child: Text('Please log in to view your library')),
+    if (!isLoggedIn) {
+      return const Center(child: Text('Please log in to view your library'));
+    }
+
+    if (library.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    _updateTabController(library.length);
+
+    return Column(
+      children: [
+        _buildTabBar(userProvider.user),
+        Expanded(
+          child: Column(
+            children: [
+              const SizedBox(height: 2),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: library.map((libraryEntry) {
+                      return _buildTabContent(libraryEntry);
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  _buildTabBar() {
-    Profile user = Provider.of<UserProvider>(context).user;
-
+  Widget _buildTabBar(Profile user) {
     return ColorTransitionTabBar(
       tabs: user.userLibrary.library.map((e) {
         return "${e.name} (${e.entries.length})";
@@ -86,103 +118,70 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
-  _buildLibraryGrid() {
-    Profile user = Provider.of<UserProvider>(context).user;
+  Widget _buildTabContent(dynamic libraryEntry) {
+    final crossAxisCount = Tools.getResponsiveCrossAxisVal(
+      MediaQuery.of(context).size.width,
+      itemWidth: 135,
+    );
 
-    return Expanded(
-      child: Column(
-        children: [
-          SizedBox(height: 2),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TabBarView(
-                controller: _tabController,
-                children: user.userLibrary.library.map((e) {
-                  return Platform.isAndroid
-                      ? RefreshIndicator.adaptive(
-                          child: GridView.builder(
-                            key: PageStorageKey('library ${e.name}'),
-                            cacheExtent: 500,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount:
-                                      Tools.getResponsiveCrossAxisVal(
-                                        MediaQuery.of(context).size.width,
-                                        itemWidth: 135,
-                                      ),
-                                  mainAxisExtent: 268,
-                                  childAspectRatio: 0.7,
-                                ),
-                            itemCount: e.entries.length,
-                            itemBuilder: (context, index) {
-                              MediaListEntry anime = e.entries[index];
-                              return AnimeCard(
-                                key: ValueKey(anime.id),
-                                
-                                context: context,
-                                index: index,
-                                tabName: anime.status,
-                                anime: anime,
-                                onLibraryChanged: () {},
-                              );
-                            },
-                          ),
-
-                          onRefresh: () {
-                            return Provider.of<UserProvider>(
-                              context,
-                              listen: false,
-                            ).reloadUserData();
-                          },
-                        )
-                      : CustomScrollView(
-                          cacheExtent: 500,
-                          slivers: [
-                            CupertinoSliverRefreshControl(
-                              onRefresh: () async {
-                                await Provider.of<UserProvider>(
-                                  context,
-                                  listen: false,
-                                ).reloadUserData();
-                              },
-                            ),
-                            SliverGrid(
-                              key: PageStorageKey('library ${e.name}'),
-
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount:
-                                        Tools.getResponsiveCrossAxisVal(
-                                          MediaQuery.of(context).size.width,
-                                          itemWidth: 135,
-                                        ),
-                                    mainAxisExtent: 268,
-                                    childAspectRatio: 0.7,
-                                  ),
-                              delegate: SliverChildBuilderDelegate((
-                                context,
-                                index,
-                              ) {
-                                MediaListEntry anime = e.entries[index];
-                                return AnimeCard(
-                                  key: ValueKey(anime.id),
-                                  context: context,
-                                  index: index,
-                                  tabName: anime.status,
-                                  anime: anime,
-                                  onLibraryChanged: () {},
-                                );
-                              }, childCount: e.entries.length),
-                            ),
-                          ],
-                        );
-                }).toList(),
-              ),
-            ),
+    if (Platform.isAndroid) {
+      return RefreshIndicator.adaptive(
+        onRefresh: () => Provider.of<UserProvider>(context, listen: false).reloadUserData(),
+        child: GridView.builder(
+          key: PageStorageKey('library_grid_${libraryEntry.name}'),
+          cacheExtent: 500,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisExtent: 268,
+            childAspectRatio: 0.7,
           ),
-        ],
-      ),
+          itemCount: libraryEntry.entries.length,
+          itemBuilder: (context, index) {
+            final MediaListEntry anime = libraryEntry.entries[index];
+            return AnimeCard(
+              key: ValueKey('${anime.id}_${libraryEntry.name}'),
+              context: context,
+              index: index,
+              tabName: anime.status,
+              anime: anime,
+              onLibraryChanged: () {},
+            );
+          },
+        ),
+      );
+    }
+
+    return CustomScrollView(
+      cacheExtent: 500,
+      key: PageStorageKey('library_scroll_${libraryEntry.name}'),
+      slivers: [
+        CupertinoSliverRefreshControl(
+          onRefresh: () async {
+            await Provider.of<UserProvider>(context, listen: false).reloadUserData();
+          },
+        ),
+        SliverGrid(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisExtent: 268,
+            childAspectRatio: 0.7,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final MediaListEntry anime = libraryEntry.entries[index];
+              return AnimeCard(
+                key: ValueKey('${anime.id}_${libraryEntry.name}'),
+                context: context,
+                index: index,
+                tabName: anime.status,
+                anime: anime,
+                onLibraryChanged: () {},
+              );
+            },
+            childCount: libraryEntry.entries.length,
+          ),
+        ),
+      ],
     );
   }
 }
