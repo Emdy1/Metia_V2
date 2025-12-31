@@ -22,8 +22,8 @@ class AnimeDatabase {
 
   AnimeDatabase fromJson(Map<String, dynamic> json) {
     id = json['id'] ?? id;
-    extensionId = json['extensionId'];
-    anilistMeidaId = json['anilistMeidaId'];
+    extensionId = int.parse(json['extensionId']);
+    anilistMeidaId = int.parse(json['anilistMeidaId']);
     matchedAnime = json['matchedAnime'] != null
         ? MetiaAnime().fromJson(json['matchedAnime'])
         : null;
@@ -45,7 +45,7 @@ class MetiaAnime {
       {'name': name, 'length': length, 'poster': poster, 'url': url};
   MetiaAnime fromJson(Map<String, dynamic> json) {
     name = json['name'];
-    length = json['length'];
+    length = int.parse(json['length']);
     poster = json['poster'];
     url = json['url'];
     return this;

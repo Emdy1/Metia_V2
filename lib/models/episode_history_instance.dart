@@ -46,9 +46,9 @@ class EpisodeHistoryInstance {
   EpisodeHistoryInstance fromJson(Map<String, dynamic> json) {
     id = json['id'] ?? id;
     title = json['title'];
-    episodeNumber = json['episodeNumber'];
-    anilistMeidaId = json['anilistMeidaId'];
-    extensionId = json['extensionId'];
+    episodeNumber = int.parse(json['episodeNumber']);
+    anilistMeidaId = int.parse(json['anilistMeidaId']);
+    extensionId = int.parse(json['extensionId']);
     seen = json['seen'];
     if (json['episode'] != null) {
       episode = MetiaEpisode()
@@ -61,7 +61,7 @@ class EpisodeHistoryInstance {
     if (json['anime'] != null) {
       anime = MetiaAnime()
         ..name = json['anime']['name']
-        ..length = json['anime']['length']
+        ..length = int.parse(json['anime']['length'])
         ..poster = json['anime']['poster']
         ..url = json['anime']['url'];
     }

@@ -26,9 +26,9 @@ class EpisodeData {
     id = json['id'] ?? id;
     progress = json['progress'];
     total = json['total'];
-    extensionId = json['extensionId'];
-    index = json['index'];
-    anilistMeidaId = json['anilistMeidaId'];
+    extensionId = int.parse(json['extensionId']);
+    index = int.parse(json['index']);
+    anilistMeidaId = int.parse(json['anilistMeidaId']);
     lastModified = json['lastModified'] != null
         ? DateTime.parse(json['lastModified'])
         : DateTime.now();

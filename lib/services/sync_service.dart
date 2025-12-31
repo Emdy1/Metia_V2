@@ -17,8 +17,8 @@ import 'package:metia/models/episode_history_service.dart';
 enum SyncStatus { idle, syncing, success, error }
 
 class SyncService extends ChangeNotifier {
-  final String baseUrl = 'https://metiasync.onrender.com';
-  // final String baseUrl = 'http://localhost:3000';
+  // final String baseUrl = 'https://metiasync.onrender.com';
+  final String baseUrl = 'http://localhost:3000';
   SyncStatus _status = SyncStatus.idle;
   SyncStatus get status => _status;
 
@@ -65,7 +65,7 @@ class SyncService extends ChangeNotifier {
       await uploadSyncData(jwtToken, since);
 
       // 2. Download and merge server data
-      await downloadSyncData(jwtToken, since);
+      await downloadSyncData(jwtToken, since); // Pass the original 'since' here
 
       // 3. Update sync time on success
       await prefs.setInt('last_sync_time', DateTime.now().millisecondsSinceEpoch);
@@ -102,13 +102,18 @@ class SyncService extends ChangeNotifier {
   }
 
   Future<void> downloadSyncData(String jwtToken, DateTime since) async {
+    // Temporarily force 'since' to epoch for debugging initial sync issues
+    final debugSince = DateTime.fromMillisecondsSinceEpoch(0);
+    print('DEBUG: Forcing download since epoch: $debugSince');
+
     final response = await http.get(
-      Uri.parse('$baseUrl/sync/download?since=${since.millisecondsSinceEpoch}'),
-      headers: {'Authorization': 'Bearer ' + jwtToken},
+      Uri.parse('$baseUrl/sync/download'), // Use debugSince here
+      headers: {'Authorization': 'Bearer $jwtToken'},
     );
 
     if (response.statusCode == 200) {
       final serverData = jsonDecode(response.body);
+      print('DEBUG: Server download response: $serverData'); // Log response
       // Use serverData to merge into local Isar database
       await mergeServerData(serverData);
     } else {
@@ -124,20 +129,26 @@ class SyncService extends ChangeNotifier {
     final extensions = data['extensions'] as List;
     final history = data['history'] as List; // <-- added
 
-    await isar.writeTxn(() async {
-      for (var animeJson in animes) {
-        animeDatabaseService.addAnimeDatabases2(AnimeDatabase().fromJson(animeJson));
-      }
-      for (var epJson in episodes) {
-        await episodeDataService.addEpisodeData(EpisodeData().fromJson(epJson));
-      }
-      for (var extJson in extensions) {
-        await extensionServices.addExtension(Extension().fromJson(extJson));
-      }
-      for (var histJson in history) {
-        await episodeHistoryService.addEpisodeHistory(EpisodeHistoryInstance().fromJson(histJson));
-      }
-    });
+    for (var animeJson in animes) {
+      // Here, we're calling addAnimeDatabases2 which does put.
+      // The lastModified for AnimeDatabase objects is set in AnimeDatabaseService
+      await animeDatabaseService.addAnimeDatabases2(AnimeDatabase().fromJson(animeJson));
+    }
+    for (var epJson in episodes) {
+      // Here, we're calling addEpisodeData which does put.
+      // The lastModified for EpisodeData objects is set in PlayerPage when created, and in EpisodeDataService when updated.
+      await episodeDataService.addEpisodeData(EpisodeData().fromJson(epJson));
+    }
+    for (var extJson in extensions) {
+      // Here, we're calling addExtension which does put.
+      // The lastModified for Extension objects is set in ExtensionServices.
+      await extensionServices.addExtension(Extension().fromJson(extJson));
+    }
+    for (var histJson in history) {
+      // Here, we're calling addEpisodeHistory which does put.
+      // The lastModified for EpisodeHistoryInstance objects is set in PlayerPage when created, and in EpisodeHistoryService when updated.
+      await episodeHistoryService.addEpisodeHistory(EpisodeHistoryInstance().fromJson(histJson));
+    }
 
     // After merging, refresh the service providers to update UI
     await extensionServices.getExtensions();

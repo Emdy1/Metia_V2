@@ -38,7 +38,8 @@ void main() async {
 
   //init sync service
 
-  //init ScriptExecutor early
+  //init ScriptExecutor early\
+
   final extensionServices = ExtensionServices();
   await extensionServices.getExtensions();
   final manager = ExtensionRuntimeManager(extensionServices);
