@@ -19,6 +19,8 @@ class UserProvider extends ChangeNotifier {
   String _JWTtoken = "";
   String? get JWTtoken => _JWTtoken;
 
+  bool get isMetiaSyncready => _isMetiaSyncReady;
+
   bool _isMetiaSyncReady = false;
 
   bool _isLoggedIn = false;

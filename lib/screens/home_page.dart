@@ -30,6 +30,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late TabController _tabController;
   StreamSubscription<Uri>? _linkSubscription;
   int _tabLength = 3;
+  bool alreadySyncedOnce = false;
 
   @override
   void initState() {
@@ -48,6 +49,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void _onLoginStateChanged() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final newLength = userProvider.isLoggedIn ? 4 : 3;
+    if (userProvider.isMetiaSyncready && alreadySyncedOnce == false) {
+      final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
+      if (token != null) {
+        Provider.of<SyncService>(context, listen: false).sync(token);
+      }
+      alreadySyncedOnce = true;
+    }
 
     if (newLength != _tabLength) {
       final oldIndex = _tabController.index;

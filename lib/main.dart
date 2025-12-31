@@ -49,7 +49,7 @@ void main() async {
     animeDatabaseService: animeDatabaseService,
     episodeHistoryService: animeHistoryService,
     extensionServices: extensionServices,
-    episodeDataService: episodeDataService
+    episodeDataService: episodeDataService,
   );
 
   //main entry
@@ -67,6 +67,8 @@ void main() async {
       ],
       builder: (context, _) {
         final themeProvider = context.watch<ThemeProvider>();
+
+       
 
         return MaterialApp(
           //showPerformanceOverlay: true,
