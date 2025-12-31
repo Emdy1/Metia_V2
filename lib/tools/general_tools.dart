@@ -275,4 +275,20 @@ class Tools {
       print('HTTP Error ${response.statusCode}: ${response.body}');
     }
   }
+
+  static Future<String?> getServerJwtToken(String aniListToken) async {
+    final response = await http.post(
+      Uri.parse('https://metiasync.onrender.com/authenticate'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'anilist_auth_key': aniListToken}),
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json['token']; // ✅ Server JWT token
+    } else {
+      print('Failed to get JWT: ${response.body}');
+      return null;
+    }
+  }
 }

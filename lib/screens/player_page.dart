@@ -212,30 +212,21 @@ class _PlayerPageState extends State<PlayerPage> {
   @override
   void initState() {
     super.initState();
-
-    extensionServices = Provider.of<ExtensionRuntimeManager>(context, listen: false).extensionServices;
-
-    episodeDataService = Provider.of<EpisodeDataService>(context, listen: false);
+    extensionServices =
+        Provider.of<ExtensionRuntimeManager>(context, listen: false)
+            .extensionServices;
+    episodeDataService =
+        Provider.of<EpisodeDataService>(context, listen: false);
     runtime = Provider.of<ExtensionRuntimeManager>(context, listen: false);
 
-    Provider.of<EpisodeHistoryService>(context, listen: false).addEpisodeHistory(
-      EpisodeHistoryInstance()
-        ..episode = widget.episodeData
-        ..title = widget.animeData.name
-        ..episodeNumber = widget.episodeList.indexWhere((episode) => episode.url == widget.episodeData.url)
-        ..anilistMeidaId = widget.mediaListEntry.media.id
-        ..extensionId = runtime.extensionServices.mainExtension!.id
-        ..seen =
-            false // for now make it false , here is the orignial code [(progress ?? 0) > episodeIndex]
-        ..parentList = widget.episodeList
-        ..anime = widget.animeData,
-    );
+    _setupEpisodeData();
 
-    // Force landscape only when this page is visible
-    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    // Force landscape
+    SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    // Listen to player state changes
+    // Listeners
     player.stream.duration.listen((duration) {
       if (mounted) {
         setState(() {
@@ -245,43 +236,50 @@ class _PlayerPageState extends State<PlayerPage> {
       }
     });
 
-    // Listen to player state changes for play/pause
     player.stream.playing.listen((playing) {
+      if (mounted) setState(() => _isPlaying = playing);
+    });
+
+    player.stream.buffering.listen((isBuffering) {
+      if (mounted) setState(() => _isLoading = isBuffering);
+    });
+
+    player.stream.position.listen((position) {
       if (mounted) {
         setState(() {
-          _isPlaying = playing;
+          currentTime = _formatDuration(position, forceHours: hasHours);
         });
       }
     });
+  }
 
-    player.stream.buffering.listen((bool isBuffering) {
-      if (isBuffering) {
-        _isLoading = true;
-      } else {
-        _isLoading = false;
-      }
-    });
+  Future<void> _setupEpisodeData() async {
+    final historyService =
+        Provider.of<EpisodeHistoryService>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    // Listen to position changes
-    firstTime = true;
-    int currentExtensionId = extensionServices.mainExtension!.id;
-
-    // Determine the index of the current episode safely
-    epIndex = widget.episodeList.indexWhere(
-      (element) => element == widget.episodeData, // compare by ID or unique property
-    );
-
-    // If not found, default to 0
+    epIndex = widget.episodeList.indexWhere((e) => e == widget.episodeData);
     if (epIndex == -1) epIndex = 0;
 
-    // Try to get existing EpisodeData
-    EpisodeData? epData = episodeDataService.getEpisodeDataOf(
+    // Add to history
+    historyService.addEpisodeHistory(EpisodeHistoryInstance()
+      ..episode = widget.episodeData
+      ..title = widget.animeData.name
+      ..episodeNumber = epIndex
+      ..anilistMeidaId = widget.mediaListEntry.media.id
+      ..extensionId = runtime.extensionServices.mainExtension!.id
+      ..seen = (widget.mediaListEntry.progress ?? 0) > epIndex
+      ..parentList = widget.episodeList
+      ..anime = widget.animeData);
+
+    // Get or create episode progress data
+    final currentExtensionId = extensionServices.mainExtension!.id;
+    EpisodeData? epData = await episodeDataService.getEpisodeDataOf(
       widget.mediaListEntry.media.id,
       currentExtensionId,
       epIndex,
     );
 
-    // If it doesn't exist, create a new one
     if (epData == null) {
       epData = EpisodeData()
         ..anilistMeidaId = widget.mediaListEntry.media.id
@@ -289,62 +287,52 @@ class _PlayerPageState extends State<PlayerPage> {
         ..index = epIndex
         ..progress = 0
         ..total = 0;
-
-      episodeDataService.addEpisodeData(epData);
+      await episodeDataService.addEpisodeData(epData);
+      // Re-fetch to ensure we have the Isar-managed instance
+      epData = await episodeDataService.getEpisodeDataOf(
+          widget.mediaListEntry.media.id, currentExtensionId, epIndex);
     }
 
-    // Listen to player position and update progress
+    if (epData == null) return; // Should not happen
+
+    // Start player
+    await initPlayer(true, "", epData);
+
+    // Listen to player position to update progress
     player.stream.position.listen((position) {
-      if (!_hasSeeked) return; // ignore until seek is done
+      if (!_hasSeeked) return; // Ignore until initial seek is done
 
       episodeDataService.updateEpisodeProgress(
-        episode: epData!,
+        episode: epData,
         progress: position.inMilliseconds.toDouble(),
-        total: parseDuration(totalTime).inMilliseconds.toDouble(),
+        total: player.state.duration.inMilliseconds.toDouble(),
       );
-    });
 
-    player.stream.position.listen((position) async {
-      // Check if episode is near completion (2 minutes left)
-
-      if (mounted) {
-        if (Provider.of<UserProvider>(context, listen: false).isLoggedIn) {
-          if (player.state.duration.inSeconds != 0) {
-            if (position.inSeconds >= player.state.duration.inSeconds - 120) {
-              // Update Anilist tracking for next episode
-              if (firstTime) {
-                firstTime = false;
-                if ((widget.mediaListEntry.progress ?? 0) < epIndex) {
-                  String accessToken = await Provider.of<UserProvider>(context, listen: false).getAuthKey();
-                  Tools.updateAnimeTracking(
-                    mediaId: widget.mediaListEntry.media.id,
-                    progress: epIndex,
-                    status: widget.mediaListEntry.media.episodes == epIndex ? "COMPLETED" : "CURRENT",
-                    accessToken: accessToken,
-                  );
-                }
-              }
-            }
+      // Update Anilist tracking near the end
+      if (userProvider.isLoggedIn &&
+          player.state.duration.inSeconds > 0 &&
+          position.inSeconds >= player.state.duration.inSeconds - 120) {
+        if (firstTime) {
+          firstTime = false;
+          if ((widget.mediaListEntry.progress ?? 0) < epIndex + 1) {
+            userProvider.getAuthKey().then((accessToken) {
+              Tools.updateAnimeTracking(
+                mediaId: widget.mediaListEntry.media.id,
+                progress: epIndex + 1,
+                status: widget.mediaListEntry.media.episodes == epIndex + 1
+                    ? "COMPLETED"
+                    : "CURRENT",
+                accessToken: accessToken,
+              );
+            });
           }
         }
-        setState(() {
-          currentTime = _formatDuration(position, forceHours: hasHours);
-        });
       }
     });
-
-    initPlayer(true, "");
   }
 
-  Future<void> initPlayer(bool useDefaultLink, String m3u8) async {
-    int epIndex = widget.episodeList.indexOf(widget.episodeData);
-    int currentExtensionId = extensionServices.mainExtension!.id;
-    EpisodeData? epData = episodeDataService.getEpisodeDataOf(
-      widget.mediaListEntry.media.id,
-      currentExtensionId,
-      epIndex,
-    );
-
+  Future<void> initPlayer(
+      bool useDefaultLink, String m3u8, EpisodeData epData) async {
     await player.open(
       Media(
         useDefaultLink ? widget.animeStreamingData.m3u8Link : m3u8,
@@ -353,18 +341,20 @@ class _PlayerPageState extends State<PlayerPage> {
       play: true,
     );
 
-    if (epData != null) {
+    // Seek to last known position
+    if (epData.progress != null && epData.progress! > 0) {
+      // Defer seeking until the player is ready
       late StreamSubscription sub;
       sub = player.stream.position.listen((duration) async {
         if (duration.inMilliseconds > 200) {
           await player.seek(Duration(milliseconds: epData.progress!.toInt()));
-          _hasSeeked = true; // mark that we have seeked
-          _isLoading = false;
+          _hasSeeked = true; // Mark that we have seeked
+          if (mounted) setState(() => _isLoading = false);
           await sub.cancel();
         }
       });
     } else {
-      _hasSeeked = true; // no seek needed
+      _hasSeeked = true; // No seek needed
     }
 
     _startHideTimer();

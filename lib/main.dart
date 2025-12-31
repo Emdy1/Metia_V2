@@ -10,23 +10,22 @@ import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/home_page.dart';
+
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
-  
+
   //never delet this, it should be run only after "WidgetsFlutterBinding.ensureInitialized();"
   await IsarServices.setup();
   await UserData.initialize();
-  await EpisodeDataService.setup();
   await ExtensionServices.setup();
   await AnimeDatabaseService.setup();
   await EpisodeHistoryService.setup();
 
   //init the episode data service
-  final episodeDataService = EpisodeDataService();
-  await episodeDataService.getEpisodeDatas();
+  final episodeDataService = EpisodeDataService(IsarServices.isar);
 
   //init the anime data service
   final animeDatabaseService = AnimeDatabaseService();

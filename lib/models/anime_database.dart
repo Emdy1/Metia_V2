@@ -10,6 +10,20 @@ class AnimeDatabase {
   int? anilistMeidaId; // AniList media id of the anime
 
   MetiaAnime? matchedAnime;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'extensionId': extensionId,
+    'anilistMeidaId': anilistMeidaId,
+    'matchedAnime': matchedAnime?.toJson(),
+  };
+
+  AnimeDatabase fromJson(Map<String, dynamic> json) {
+    extensionId = json['extensionId'];
+    anilistMeidaId = json['anilistMeidaId'];
+    matchedAnime = json['matchedAnime'] != null ? MetiaAnime().fromJson(json['matchedAnime']) : null;
+    return this;
+  }
 }
 
 @embedded
@@ -18,7 +32,17 @@ class MetiaAnime {
   late int length;
   late String poster;
   late String url;
+
+  Map<String, dynamic> toJson() => {'name': name, 'length': length, 'poster': poster, 'url': url};
+  MetiaAnime fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    length = json['length'];
+    poster = json['poster'];
+    url = json['url'];
+    return this;
+  }
 }
+
 @embedded
 class MetiaEpisode {
   late String poster;
@@ -26,7 +50,10 @@ class MetiaEpisode {
   late String url;
   late bool isDub;
   late bool isSub;
+
+  Map<String, dynamic> toJson() => {'poster': poster, 'name': name, 'url': url, 'isDub': isDub, 'isSub': isSub};
 }
+
 @embedded
 class StreamingData {
   late String link;

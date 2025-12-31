@@ -4,76 +4,68 @@ import 'package:metia/data/isar_services/isar_services.dart';
 import 'package:metia/models/episode_database.dart';
 
 class EpisodeDataService extends ChangeNotifier {
-  static late final Isar db;
+  final Isar db;
+  late final Stream<List<EpisodeData>> _allEpisodesStream;
 
-  static Future<void> setup() async {
-    db = IsarServices.isar;
+  EpisodeDataService(this.db) {
+    _allEpisodesStream =
+        db.episodeDatas.where().watch(fireImmediately: true);
   }
 
-  final List<EpisodeData> currentEpisodeDatas = [];
+  Stream<List<EpisodeData>> watchAllEpisodeDatas() {
+    return _allEpisodesStream;
+  }
 
   Future<void> addEpisodeData(EpisodeData episodeData) async {
     await db.writeTxn(() async {
       await db.episodeDatas.put(episodeData);
     });
-    await getEpisodeDatas();
   }
 
-  EpisodeData? getEpisodeDataOf(
+  Future<EpisodeData?> getEpisodeDataOf(
+    int anilistMeidaId,
+    int extensionId,
+    int index,
+  ) async {
+    return await db.episodeDatas
+        .where()
+        .filter()
+        .anilistMeidaIdEqualTo(anilistMeidaId)
+        .extensionIdEqualTo(extensionId)
+        .indexEqualTo(index)
+        .findFirst();
+  }
+
+  Stream<EpisodeData?> watchEpisodeDataOf(
     int anilistMeidaId,
     int extensionId,
     int index,
   ) {
-    EpisodeData? epData;
-    if (currentEpisodeDatas
-        .where(
-          (episodeData) =>
-              episodeData.anilistMeidaId == anilistMeidaId &&
-              episodeData.extensionId == extensionId &&
-              episodeData.index == index,
-        )
-        .isNotEmpty) {
-      epData = currentEpisodeDatas
-          .where(
-            (episodeData) =>
-                episodeData.anilistMeidaId == anilistMeidaId &&
-                episodeData.extensionId == extensionId &&
-                episodeData.index == index,
-          )
-          .first;
-    }
-
-    return epData;
+    return db.episodeDatas
+        .where()
+        .filter()
+        .anilistMeidaIdEqualTo(anilistMeidaId)
+        .extensionIdEqualTo(extensionId)
+        .indexEqualTo(index)
+        .watch(fireImmediately: true)
+        .map((results) => results.isNotEmpty ? results.first : null);
   }
 
-  /// Fetch all extensions and update local list
-  Future<void> getEpisodeDatas() async {
-    List<EpisodeData> episodeDatas = await db.episodeDatas.where().findAll();
-    currentEpisodeDatas.clear();
-    currentEpisodeDatas.addAll(episodeDatas);
-    notifyListeners();
-  }
-
-  /// modify progress of an espiode data
   Future<void> updateEpisodeProgress({
     EpisodeData? episode,
     double? progress,
     double? total,
   }) async {
-    await db.writeTxn(() async {
-      //final episode = await db.episodeDatas.get(isarEpisodeId);
-      if (episode == null) return;
+    if (episode == null) return;
 
+    await db.writeTxn(() async {
       if (progress != null) {
         episode.progress = progress;
       }
       if (total != null) {
         episode.total = total;
       }
-
       await db.episodeDatas.put(episode);
     });
-
-    await getEpisodeDatas();
   }
 }

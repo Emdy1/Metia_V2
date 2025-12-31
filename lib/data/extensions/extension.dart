@@ -1,4 +1,3 @@
-
 import 'package:isar/isar.dart';
 
 part 'extension.g.dart';
@@ -7,7 +6,7 @@ part 'extension.g.dart';
 class Extension {
   Id id = Isar.autoIncrement;
 
-  //those are essential
+  // Essential fields
   String? name;
   String? iconUrl;
   bool? isSub;
@@ -17,12 +16,43 @@ class Extension {
 
   String? jsCode;
   String? jsCodeUrl;
-  
 
-  //those are optional
+  // Optional fields
   String? version;
   String? author;
   String? description;
 
   bool isMain = false;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'iconUrl': iconUrl,
+    'isSub': isSub,
+    'isDub': isDub,
+    'language': language,
+    'anilistPreferedTitle': anilistPreferedTitle,
+    'jsCode': jsCode,
+    'jsCodeUrl': jsCodeUrl,
+    'version': version,
+    'author': author,
+    'description': description,
+    'isMain': isMain,
+  };
+
+  Extension fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    iconUrl = json['iconUrl'];
+    isSub = json['isSub'];
+    isDub = json['isDub'];
+    language = json['language'];
+    anilistPreferedTitle = json['anilistPreferedTitle'];
+    jsCode = json['jsCode'];
+    jsCodeUrl = json['jsCodeUrl'];
+    version = json['version'];
+    author = json['author'];
+    description = json['description'];
+    isMain = json['isMain'] ?? false;
+    return this;
+  }
 }

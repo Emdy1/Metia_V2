@@ -29,13 +29,15 @@ class EpisodeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<EpisodeDataService, EpisodeData?>(
-      selector: (_, service) => service.getEpisodeDataOf(animeId, extensionId, index),
-      shouldRebuild: (prev, next) {
-        return prev?.progress != next?.progress || prev?.total != next?.total;
-      },
-      builder: (context, epData, _) {
-        final percentage = epData != null && epData.total! > 0 ? (epData.progress! / epData.total!) * 100 : 0.0;
+    return StreamBuilder<EpisodeData?>(
+      stream: context
+          .read<EpisodeDataService>()
+          .watchEpisodeDataOf(animeId, extensionId, index),
+      builder: (context, snapshot) {
+        final epData = snapshot.data;
+        final percentage = epData != null && epData.total! > 0
+            ? (epData.progress! / epData.total!) * 100
+            : 0.0;
 
         return _EpisodeItemContent(
           index: index,
@@ -94,7 +96,9 @@ class _EpisodeItemContent extends StatelessWidget {
                 height: 104,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  color: current ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+                  color: current
+                      ? scheme.primaryContainer
+                      : scheme.surfaceContainerHighest,
                 ),
               ),
               Opacity(
@@ -130,8 +134,12 @@ class _EpisodeItemContent extends StatelessWidget {
               _EpisodeNumberBadge(
                 episodeNumber: index + 1,
                 current: current,
-                backgroundColor: current ? scheme.primaryContainer : scheme.surfaceContainerHighest,
-                textColor: current ? scheme.onPrimaryContainer : scheme.onSurface,
+                backgroundColor: current
+                    ? scheme.primaryContainer
+                    : scheme.surfaceContainerHighest,
+                textColor: current
+                    ? scheme.onPrimaryContainer
+                    : scheme.onSurface,
               ),
             ],
           ),

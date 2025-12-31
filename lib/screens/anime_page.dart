@@ -104,6 +104,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   void startGettingAnimeEpisodes() async {
     isSearching = false;
     isGettingEpisodes = true;
+    if (executor == null) return;
     episodeList = await executor!.getAnimeEpisodeList(matchedAnime!.url);
 
     print("found ${episodeList.length} episodes for ${matchedAnime!.name} ");
@@ -194,6 +195,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       //final searchResults = await currentExtension!.search(title);
 
       final searchResults = await executor!.searchAnime(title!);
+      if (!mounted) return;
       if (searchResults.isEmpty) {
         print(
           "ERROR: found 0 entries from searching \"${title}\" with extension \"${runtime.extensionServices.mainExtension!.name}\"",
@@ -278,13 +280,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
     print("INFO: found this title \"${matchedAnime!.name}\" to be the best match ");
 
-    setState(() {
-      //foundTitle = clossestAnime == null ? " " : clossestAnime["title"];
-    });
-  }
-
-  void seetState() {
-    setState(() {});
+    if (mounted) {
+      setState(() {
+        //foundTitle = clossestAnime == null ? " " : clossestAnime["title"];
+      });
+    }
   }
 
   void watchAnime(String url, MetiaEpisode episode, int episodeIndex, String animeTitle) async {
@@ -302,6 +302,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
               // Run once
               if (isLoading) {
                 executor!.getEpisodeStreamData(url).then((value) {
+                  if (!context.mounted) return;
                   setState(() {
                     streamingDatas = value;
                     isLoading = false;
@@ -382,7 +383,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                                   ),
                                                 ),
                                               );
-                                              seetState();
+                                              if (mounted) {
+                                                setState(() {});
+                                              }
 
                                               // Navigator.pop(context);
                                               // if (result == "setState") {
@@ -410,7 +413,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
         );
       },
     );
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void correctMatchedAnime(String keyword) {
@@ -437,6 +442,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     hasFetched = true;
                     Future.microtask(() async {
                       final value = await executor!.searchAnime(keyword);
+                      if (!context.mounted) return;
                       setState(() {
                         animes = value;
                         isLoading = false;
@@ -447,6 +453,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   Future<void> search(String query) async {
                     setState(() => isLoading = true);
                     final value = await executor!.searchAnime(query);
+                    if (!context.mounted) return;
                     setState(() {
                       animes = value;
                       isLoading = false;
@@ -578,7 +585,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
     List<MediaListGroup> userLIb = Provider.of<UserProvider>(context, listen: false).user.userLibrary.library;
     for (var group in userLIb) {
-      if (group.entries.where((element) => element.media.id == widget.anime.media.id).length > 0) {
+      if (group.entries.where((element) => element.media.id == widget.anime.media.id).isNotEmpty) {
         progress = group.entries.where((element) => element.media.id == widget.anime.media.id).first.progress!;
       }
     }
@@ -682,206 +689,6 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     }
 
     return body;
-  }
-
-  Widget buildAnimeEpisode(int index, bool current, bool seen, MetiaEpisode episode, String title) {
-    final episodeDataService = context.watch<EpisodeDataService>();
-
-    bool hasEpisodeData =
-        episodeDataService.getEpisodeDataOf(
-          widget.anime.media.id,
-          runtime.extensionServices.mainExtension!.id,
-          index,
-        ) !=
-        null;
-
-    double percentage = 0; // out of 100
-    EpisodeData? epData;
-
-    if (hasEpisodeData) {
-      epData = episodeDataService.getEpisodeDataOf(
-        widget.anime.media.id,
-        runtime.extensionServices.mainExtension!.id,
-        index,
-      );
-      percentage = (epData!.progress! / epData.total!) * 100;
-    }
-
-    // ===== Material 3 colors =====
-    final currentBackgroundColor = scheme.primaryContainer;
-    final backgroundColor = scheme.surfaceContainerHighest;
-
-    final currentTextColor = scheme.onPrimaryContainer;
-    final normalTextColor = scheme.onSurface;
-    final secondaryTextColor = scheme.onSurfaceVariant;
-
-    final progressBarColor = current ? scheme.primary : scheme.secondary;
-
-    return GestureDetector(
-      onTapUp: (_) {
-        watchAnime(episodeList[index].url, episode, index, matchedAnime!.name);
-      },
-      child: Container(
-        width: double.infinity,
-        height: 108,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-        child: Stack(
-          children: [
-            // ===== Progress bar =====
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  height: 50,
-                  width: double.infinity,
-                  color: backgroundColor,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: percentage / 100,
-                      child: Container(color: progressBarColor),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // ===== Main background =====
-            Container(
-              height: 104,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: current ? currentBackgroundColor : backgroundColor,
-              ),
-            ),
-
-            // ===== Content =====
-            Opacity(
-              opacity: seen ? 0.45 : 1,
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: SizedBox(
-                  height: 100,
-                  child: Row(
-                    children: [
-                      // Thumbnail
-                      SizedBox(
-                        height: 100,
-                        child: AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: CachedNetworkImage(
-                              imageUrl: episode.poster,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Text content
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 16),
-                          child: SizedBox(
-                            height: 100,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    title,
-                                    style: TextStyle(
-                                      color: current ? currentTextColor : secondaryTextColor,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    episode.name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: current ? currentTextColor : normalTextColor,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    episode.isDub && episode.isSub
-                                        ? "Sub | Dub"
-                                        : episode.isSub
-                                        ? "Sub"
-                                        : episode.isDub
-                                        ? "Dub"
-                                        : "not specified",
-                                    style: TextStyle(
-                                      color: current ? currentTextColor.withOpacity(0.8) : secondaryTextColor,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ===== Seen check =====
-            if (seen)
-              const Positioned(
-                left: 4,
-                child: SizedBox(
-                  height: 100,
-                  width: 177.78,
-                  child: Center(child: Icon(Icons.check, size: 60, color: Colors.white)),
-                ),
-              ),
-
-            // ===== Episode number badge =====
-            SizedBox(
-              height: 100,
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Transform.translate(
-                  offset: const Offset(0, 4.1),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: current ? currentBackgroundColor : backgroundColor,
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(10),
-                        bottomLeft: Radius.circular(10),
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Text(
-                      "${index + 1}",
-                      style: TextStyle(
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                        color: current ? currentTextColor : normalTextColor,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget buildExtensionInfo() {

@@ -12,6 +12,7 @@ import 'package:metia/screens/anime_page.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:metia/widgets/explorer_anime_card.dart';
 import 'package:metia/widgets/library_anime_card.dart';
+import 'package:metia/widgets/anime_search_sheet.dart';
 import 'package:provider/provider.dart';
 
 class ExplorerPage extends StatefulWidget {
@@ -56,216 +57,15 @@ class _ExplorerPageState extends State<ExplorerPage> {
   }
 
   void searchPressed() {
-    String keyword = "bleach";
-    List<Media> animes = [];
-    bool isLoading = true;
-    final TextEditingController searchController = TextEditingController(text: keyword);
-    bool hasFetched = false; // run initial fetch once
-
     showModalBottomSheet(
       backgroundColor: Theme.of(context).colorScheme.surface,
       context: context,
       isScrollControlled: true,
-      builder: (context) {
-        isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-        return SizedBox(
-          height: isLandscape ? MediaQuery.of(context).size.height * 1 : MediaQuery.of(context).size.height * 0.563,
-          child: LayoutBuilder(
-            builder: (context, boxConstraints) {
-              return StatefulBuilder(
-                builder: (context, setState) {
-                  // Initial fetch, only once
-                  if (!hasFetched) {
-                    hasFetched = true;
-                    Future.microtask(() async {
-                      final value = await anilistSearch(keyword);
-                      setState(() {
-                        animes = value;
-                        isLoading = false;
-                      });
-                    });
-                  }
-
-                  Future<void> search(String query) async {
-                    setState(() => isLoading = true);
-                    final value = await anilistSearch(query);
-                    setState(() {
-                      animes = value;
-                      isLoading = false;
-                    });
-                  }
-
-                  return Padding(
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(
-                          controller: searchController,
-                          textInputAction: TextInputAction.search,
-                          decoration: InputDecoration(
-                            labelText: 'Search Anime',
-                            hintText: 'Enter anime name',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onSubmitted: (value) {
-                            if (value.trim().isNotEmpty) {
-                              search(value.trim());
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: isLoading
-                              ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.tertiary))
-                              : GridView.builder(
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: Tools.getResponsiveCrossAxisVal(
-                                      boxConstraints.maxWidth,
-                                      itemWidth: 135,
-                                    ),
-                                    mainAxisExtent: 268,
-                                    childAspectRatio: 0.7,
-                                  ),
-                                  itemCount: animes.length,
-                                  itemBuilder: (context, index) {
-                                    Media media = animes[index];
-                                    bool alreadyInLibrary = false;
-                                    String listName = "";
-                                    for (var group in user.userLibrary.library) {
-                                      for (var i = 0; i < group.entries.length; i++) {
-                                        if (group.entries[i].media.id == media.id) {
-                                          alreadyInLibrary = true;
-                                          listName = group.name;
-                                        }
-                                      }
-                                    }
-
-                                    return SizedBox(
-                                      // width:
-                                      //     itemWidth +
-                                      //     ((MediaQuery.of(context).orientation == Orientation.landscape)
-                                      //         ? -12.4
-                                      //         : -3.5),
-                                      child: ExplorerAnimeCard(
-                                        alreadyInLibrary: alreadyInLibrary,
-                                        onLibraryChanged: () {
-                                          setState(() {});
-                                        },
-                                        context: context,
-                                        anime: media,
-                                        index: index,
-                                        listName: listName,
-                                      ),
-                                    );
-                                  },
-
-                                  // Provider.of<ThemeProvider>(
-                                  //         context,
-                                  //         listen: false,
-                                  //       ).setSeed(anime.coverImage.color);
-
-                                  //       await Navigator.of(context).push(
-                                  //         CustomPageRoute(
-                                  //           builder: (context) => AnimePage(
-                                  //             anime: MediaListEntry(id: 0, status: "", media: anime),
-                                  //           ),
-                                  //         ),
-                                  //       );
-                                  //       Provider.of<ThemeProvider>(
-                                  //         context,
-                                  //         listen: false,
-                                  //       ).setSeed(Color.fromARGB(255, 72, 255, 0));
-
-                                  //   itemBuilder: (context, index) {
-                                  //     final anime = animes[index];
-                                  //     final poster = anime.coverImage.large;
-                                  //     final name = anime.title.english ?? anime.title.romaji ?? anime.title.native;
-
-                                  //     return GestureDetector(
-                                  //       onTap: () async {
-                                  //         Provider.of<ThemeProvider>(
-                                  //           context,
-                                  //           listen: false,
-                                  //         ).setSeed(anime.coverImage.color);
-
-                                  //         await Navigator.of(context).push(
-                                  //           CustomPageRoute(
-                                  //             builder: (context) => AnimePage(
-                                  //               anime: MediaListEntry(id: 0, status: "", media: anime),
-                                  //             ),
-                                  //           ),
-                                  //         );
-                                  //         Provider.of<ThemeProvider>(
-                                  //           context,
-                                  //           listen: false,
-                                  //         ).setSeed(Color.fromARGB(255, 72, 255, 0));
-
-                                  //         //TODO: Navigate to the aniem page with the appropriate data!
-                                  //       },
-                                  //       child: Card(
-                                  //         child: Stack(
-                                  //           children: [
-                                  //             Align(
-                                  //               alignment: Alignment.center,
-                                  //               child: SizedBox(
-                                  //                 width: 135,
-                                  //                 child: Column(
-                                  //                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  //                   children: [
-                                  //                     SizedBox(
-                                  //                       height: 183,
-                                  //                       width: 135,
-                                  //                       child: ClipRRect(
-                                  //                         borderRadius: BorderRadius.circular(12),
-                                  //                         child: CachedNetworkImage(
-                                  //                           imageUrl: poster,
-                                  //                           fit: BoxFit.cover,
-                                  //                           placeholder: (context, url) => const Center(
-                                  //                             child: CircularProgressIndicator(strokeWidth: 2),
-                                  //                           ),
-                                  //                           errorWidget: (context, url, error) => const Icon(Icons.error),
-                                  //                         ),
-                                  //                       ),
-                                  //                     ),
-                                  //                     const SizedBox(height: 5),
-                                  //                     Expanded(
-                                  //                       child: Center(
-                                  //                         child: Text(
-                                  //                           name!,
-                                  //                           overflow: TextOverflow.ellipsis,
-                                  //                           maxLines: 2,
-                                  //                           style: TextStyle(
-                                  //                             color: Theme.of(context).colorScheme.primary,
-                                  //                             fontWeight: FontWeight.w600,
-                                  //                             fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
-                                  //                           ),
-                                  //                           textAlign: TextAlign.center,
-                                  //                         ),
-                                  //                       ),
-                                  //                     ),
-                                  //                   ],
-                                  //                 ),
-                                  //               ),
-                                  //             ),
-                                  //           ],
-                                  //         ),
-                                  //       ),
-                                  //     );
-                                  //   },
-                                ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        );
-      },
+      builder: (context) => const AnimeSearchSheet(),
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +254,7 @@ class _ExplorerPageState extends State<ExplorerPage> {
   }
 
   _buildSection(List<Media> entries, String headLine) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -473,13 +274,14 @@ class _ExplorerPageState extends State<ExplorerPage> {
               scrollDirection: Axis.horizontal,
               itemBuilder: (context, index) {
                 Media media = entries[index];
-                bool alreadyInLibrary = false;
+                bool alreadyInLibrary = userProvider.isMediaInLibrary(media.id);
                 String listName = "";
-                for (var group in user.userLibrary.library) {
-                  for (var i = 0; i < group.entries.length; i++) {
-                    if (group.entries[i].media.id == media.id) {
-                      alreadyInLibrary = true;
-                      listName = group.name;
+                if (alreadyInLibrary) {
+                  for (var group in user.userLibrary.library) {
+                    for (var i = 0; i < group.entries.length; i++) {
+                      if (group.entries[i].media.id == media.id) {
+                        listName = group.name;
+                      }
                     }
                   }
                 }
