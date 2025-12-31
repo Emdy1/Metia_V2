@@ -20,8 +20,8 @@ import 'package:metia/models/episode_history_service.dart';
 enum SyncStatus { idle, syncing, success, error }
 
 class SyncService extends ChangeNotifier {
-  // final String baseUrl = 'https://metiasync.onrender.com';
-  final String baseUrl = 'http://localhost:3000';
+  final String baseUrl = 'https://metiasync.onrender.com';
+  // final String baseUrl = 'http://localhost:3000';
   SyncStatus _status = SyncStatus.idle;
   SyncStatus get status => _status;
 
