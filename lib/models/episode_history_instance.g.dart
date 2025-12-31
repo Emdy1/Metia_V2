@@ -18,9 +18,9 @@ const EpisodeHistoryInstanceSchema = CollectionSchema(
   name: r'EpisodeHistoryInstance',
   id: 3651302419984739329,
   properties: {
-    r'anilistMeidaId': PropertySchema(
+    r'anilistMediaId': PropertySchema(
       id: 0,
-      name: r'anilistMeidaId',
+      name: r'anilistMediaId',
       type: IsarType.long,
     ),
     r'anime': PropertySchema(
@@ -135,7 +135,7 @@ void _episodeHistoryInstanceSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.anilistMeidaId);
+  writer.writeLong(offsets[0], object.anilistMediaId);
   writer.writeObject<MetiaAnime>(
     offsets[1],
     allOffsets,
@@ -168,7 +168,7 @@ EpisodeHistoryInstance _episodeHistoryInstanceDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = EpisodeHistoryInstance();
-  object.anilistMeidaId = reader.readLongOrNull(offsets[0]);
+  object.anilistMediaId = reader.readLongOrNull(offsets[0]);
   object.anime = reader.readObjectOrNull<MetiaAnime>(
     offsets[1],
     MetiaAnimeSchema.deserialize,
@@ -335,63 +335,63 @@ extension EpisodeHistoryInstanceQueryWhere on QueryBuilder<
 extension EpisodeHistoryInstanceQueryFilter on QueryBuilder<
     EpisodeHistoryInstance, EpisodeHistoryInstance, QFilterCondition> {
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
-      QAfterFilterCondition> anilistMeidaIdIsNull() {
+      QAfterFilterCondition> anilistMediaIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
       ));
     });
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
-      QAfterFilterCondition> anilistMeidaIdIsNotNull() {
+      QAfterFilterCondition> anilistMediaIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
       ));
     });
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
-      QAfterFilterCondition> anilistMeidaIdEqualTo(int? value) {
+      QAfterFilterCondition> anilistMediaIdEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         value: value,
       ));
     });
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
-      QAfterFilterCondition> anilistMeidaIdGreaterThan(
+      QAfterFilterCondition> anilistMediaIdGreaterThan(
     int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         value: value,
       ));
     });
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
-      QAfterFilterCondition> anilistMeidaIdLessThan(
+      QAfterFilterCondition> anilistMediaIdLessThan(
     int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         value: value,
       ));
     });
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
-      QAfterFilterCondition> anilistMeidaIdBetween(
+      QAfterFilterCondition> anilistMediaIdBetween(
     int? lower,
     int? upper, {
     bool includeLower = true,
@@ -399,7 +399,7 @@ extension EpisodeHistoryInstanceQueryFilter on QueryBuilder<
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1044,16 +1044,16 @@ extension EpisodeHistoryInstanceQueryLinks on QueryBuilder<
 extension EpisodeHistoryInstanceQuerySortBy
     on QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QSortBy> {
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
-      sortByAnilistMeidaId() {
+      sortByAnilistMediaId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.asc);
+      return query.addSortBy(r'anilistMediaId', Sort.asc);
     });
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
-      sortByAnilistMeidaIdDesc() {
+      sortByAnilistMediaIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.desc);
+      return query.addSortBy(r'anilistMediaId', Sort.desc);
     });
   }
 
@@ -1131,16 +1131,16 @@ extension EpisodeHistoryInstanceQuerySortBy
 extension EpisodeHistoryInstanceQuerySortThenBy on QueryBuilder<
     EpisodeHistoryInstance, EpisodeHistoryInstance, QSortThenBy> {
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
-      thenByAnilistMeidaId() {
+      thenByAnilistMediaId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.asc);
+      return query.addSortBy(r'anilistMediaId', Sort.asc);
     });
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
-      thenByAnilistMeidaIdDesc() {
+      thenByAnilistMediaIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.desc);
+      return query.addSortBy(r'anilistMediaId', Sort.desc);
     });
   }
 
@@ -1232,9 +1232,9 @@ extension EpisodeHistoryInstanceQuerySortThenBy on QueryBuilder<
 extension EpisodeHistoryInstanceQueryWhereDistinct
     on QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QDistinct> {
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QDistinct>
-      distinctByAnilistMeidaId() {
+      distinctByAnilistMediaId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'anilistMeidaId');
+      return query.addDistinctBy(r'anilistMediaId');
     });
   }
 
@@ -1283,9 +1283,9 @@ extension EpisodeHistoryInstanceQueryProperty on QueryBuilder<
   }
 
   QueryBuilder<EpisodeHistoryInstance, int?, QQueryOperations>
-      anilistMeidaIdProperty() {
+      anilistMediaIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'anilistMeidaId');
+      return query.addPropertyName(r'anilistMediaId');
     });
   }
 

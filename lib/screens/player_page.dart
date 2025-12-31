@@ -266,7 +266,7 @@ class _PlayerPageState extends State<PlayerPage> {
       ..episode = widget.episodeData
       ..title = widget.animeData.name
       ..episodeNumber = epIndex
-      ..anilistMeidaId = widget.mediaListEntry.media.id
+      ..anilistMediaId = widget.mediaListEntry.media.id
       ..extensionId = runtime.extensionServices.mainExtension!.id
       ..seen = (widget.mediaListEntry.progress ?? 0) > epIndex
       ..parentList = widget.episodeList
@@ -283,7 +283,7 @@ class _PlayerPageState extends State<PlayerPage> {
 
     if (epData == null) {
       epData = EpisodeData()
-        ..anilistMeidaId = widget.mediaListEntry.media.id
+        ..anilistMediaId = widget.mediaListEntry.media.id
         ..extensionId = currentExtensionId
         ..index = epIndex
         ..progress = 0
@@ -306,8 +306,8 @@ class _PlayerPageState extends State<PlayerPage> {
 
       episodeDataService.updateEpisodeProgress(
         episode: epData,
-        progress: position.inMilliseconds.toDouble(),
-        total: player.state.duration.inMilliseconds.toDouble(),
+        progress: position.inMilliseconds,
+        total: player.state.duration.inMilliseconds,
       );
 
       // Update Anilist tracking near the end

@@ -135,7 +135,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                                       id: 0,
                                                       status: "CURRENT",
                                                       media: Media.fromJson({
-                                                        "id": history[index].anilistMeidaId!,
+                                                        "id": history[index].anilistMediaId!,
                                                         "title": {"english": animeTitle},
                                                       }),
                                                     ),
@@ -200,7 +200,7 @@ class _HistoryPageState extends State<HistoryPage> {
             return EpisodeItem(
               key: ValueKey('episode_$index'),
               index: episodeHistoryInstance.episodeNumber!, // Episode Index, starts from 0
-              animeId: episodeHistoryInstance.anilistMeidaId!, // Anilist Media Id
+              animeId: episodeHistoryInstance.anilistMediaId!, // Anilist Media Id
               extensionId: episodeHistoryInstance.extensionId!, // Extension Id
               current: false, // is current episode, should be false by default in this scenario
               seen: episodeHistoryInstance.seen!, // has been seen, should be false by default in this scenario

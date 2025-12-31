@@ -17,9 +17,9 @@ const AnimeDatabaseSchema = CollectionSchema(
   name: r'AnimeDatabase',
   id: -7123506015754260134,
   properties: {
-    r'anilistMeidaId': PropertySchema(
+    r'anilistMediaId': PropertySchema(
       id: 0,
-      name: r'anilistMeidaId',
+      name: r'anilistMediaId',
       type: IsarType.long,
     ),
     r'extensionId': PropertySchema(
@@ -76,7 +76,7 @@ void _animeDatabaseSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.anilistMeidaId);
+  writer.writeLong(offsets[0], object.anilistMediaId);
   writer.writeLong(offsets[1], object.extensionId);
   writer.writeDateTime(offsets[2], object.lastModified);
   writer.writeObject<MetiaAnime>(
@@ -94,7 +94,7 @@ AnimeDatabase _animeDatabaseDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = AnimeDatabase();
-  object.anilistMeidaId = reader.readLongOrNull(offsets[0]);
+  object.anilistMediaId = reader.readLongOrNull(offsets[0]);
   object.extensionId = reader.readLongOrNull(offsets[1]);
   object.id = id;
   object.lastModified = reader.readDateTimeOrNull(offsets[2]);
@@ -227,63 +227,63 @@ extension AnimeDatabaseQueryWhere
 extension AnimeDatabaseQueryFilter
     on QueryBuilder<AnimeDatabase, AnimeDatabase, QFilterCondition> {
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
-      anilistMeidaIdIsNull() {
+      anilistMediaIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
       ));
     });
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
-      anilistMeidaIdIsNotNull() {
+      anilistMediaIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
       ));
     });
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
-      anilistMeidaIdEqualTo(int? value) {
+      anilistMediaIdEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         value: value,
       ));
     });
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
-      anilistMeidaIdGreaterThan(
+      anilistMediaIdGreaterThan(
     int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         value: value,
       ));
     });
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
-      anilistMeidaIdLessThan(
+      anilistMediaIdLessThan(
     int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         value: value,
       ));
     });
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
-      anilistMeidaIdBetween(
+      anilistMediaIdBetween(
     int? lower,
     int? upper, {
     bool includeLower = true,
@@ -291,7 +291,7 @@ extension AnimeDatabaseQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'anilistMeidaId',
+        property: r'anilistMediaId',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -537,16 +537,16 @@ extension AnimeDatabaseQueryLinks
 extension AnimeDatabaseQuerySortBy
     on QueryBuilder<AnimeDatabase, AnimeDatabase, QSortBy> {
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
-      sortByAnilistMeidaId() {
+      sortByAnilistMediaId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.asc);
+      return query.addSortBy(r'anilistMediaId', Sort.asc);
     });
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
-      sortByAnilistMeidaIdDesc() {
+      sortByAnilistMediaIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.desc);
+      return query.addSortBy(r'anilistMediaId', Sort.desc);
     });
   }
 
@@ -581,16 +581,16 @@ extension AnimeDatabaseQuerySortBy
 extension AnimeDatabaseQuerySortThenBy
     on QueryBuilder<AnimeDatabase, AnimeDatabase, QSortThenBy> {
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
-      thenByAnilistMeidaId() {
+      thenByAnilistMediaId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.asc);
+      return query.addSortBy(r'anilistMediaId', Sort.asc);
     });
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
-      thenByAnilistMeidaIdDesc() {
+      thenByAnilistMediaIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'anilistMeidaId', Sort.desc);
+      return query.addSortBy(r'anilistMediaId', Sort.desc);
     });
   }
 
@@ -637,9 +637,9 @@ extension AnimeDatabaseQuerySortThenBy
 extension AnimeDatabaseQueryWhereDistinct
     on QueryBuilder<AnimeDatabase, AnimeDatabase, QDistinct> {
   QueryBuilder<AnimeDatabase, AnimeDatabase, QDistinct>
-      distinctByAnilistMeidaId() {
+      distinctByAnilistMediaId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'anilistMeidaId');
+      return query.addDistinctBy(r'anilistMediaId');
     });
   }
 
@@ -666,9 +666,9 @@ extension AnimeDatabaseQueryProperty
     });
   }
 
-  QueryBuilder<AnimeDatabase, int?, QQueryOperations> anilistMeidaIdProperty() {
+  QueryBuilder<AnimeDatabase, int?, QQueryOperations> anilistMediaIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'anilistMeidaId');
+      return query.addPropertyName(r'anilistMediaId');
     });
   }
 

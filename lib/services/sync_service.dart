@@ -17,8 +17,8 @@ import 'package:metia/models/episode_history_service.dart';
 enum SyncStatus { idle, syncing, success, error }
 
 class SyncService extends ChangeNotifier {
-  final String baseUrl = 'https://metiasync.onrender.com';
-  //final String baseUrl = 'http://localhost:3000';
+  //final String baseUrl = 'https://metiasync.onrender.com';
+  final String baseUrl = 'http://localhost:3000';
   SyncStatus _status = SyncStatus.idle;
   SyncStatus get status => _status;
 
@@ -132,22 +132,22 @@ class SyncService extends ChangeNotifier {
     for (var animeJson in animes) {
       // Here, we're calling addAnimeDatabases2 which does put.
       // The lastModified for AnimeDatabase objects is set in AnimeDatabaseService
-      await animeDatabaseService.addAnimeDatabases2(AnimeDatabase().fromJson(animeJson));
+      await animeDatabaseService.addAnimeDatabases2(AnimeDatabase().fromJson(animeJson)); //this is so the logic that searches for the matched anime gets saved so no more guessing correct matched anime 
     }
     for (var epJson in episodes) {
       // Here, we're calling addEpisodeData which does put.
       // The lastModified for EpisodeData objects is set in PlayerPage when created, and in EpisodeDataService when updated.
-      await episodeDataService.addEpisodeData(EpisodeData().fromJson(epJson));
+      await episodeDataService.addEpisodeData(EpisodeData().fromJson(epJson)); //this seaves the current progress of the user an in episdoe in seconds.
     }
     for (var extJson in extensions) {
       // Here, we're calling addExtension which does put.
       // The lastModified for Extension objects is set in ExtensionServices.
-      await extensionServices.addExtension(Extension().fromJson(extJson));
+      await extensionServices.addExtension(Extension().fromJson(extJson)); // this is for extensions list
     }
     for (var histJson in history) {
       // Here, we're calling addEpisodeHistory which does put.
       // The lastModified for EpisodeHistoryInstance objects is set in PlayerPage when created, and in EpisodeHistoryService when updated.
-      await episodeHistoryService.addEpisodeHistory(EpisodeHistoryInstance().fromJson(histJson));
+      await episodeHistoryService.addEpisodeHistory(EpisodeHistoryInstance().fromJson(histJson)); // this is to show the history of the user's watched anime
     }
 
     // After merging, refresh the service providers to update UI

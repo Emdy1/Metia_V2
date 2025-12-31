@@ -23,28 +23,28 @@ class EpisodeDataService extends ChangeNotifier {
   }
 
   Future<EpisodeData?> getEpisodeDataOf(
-    int anilistMeidaId,
+    int anilistMediaId,
     int extensionId,
     int index,
   ) async {
     return await db.episodeDatas
         .where()
         .filter()
-        .anilistMeidaIdEqualTo(anilistMeidaId)
+        .anilistMediaIdEqualTo(anilistMediaId)
         .extensionIdEqualTo(extensionId)
         .indexEqualTo(index)
         .findFirst();
   }
 
   Stream<EpisodeData?> watchEpisodeDataOf(
-    int anilistMeidaId,
+    int anilistMediaId,
     int extensionId,
     int index,
   ) {
     return db.episodeDatas
         .where()
         .filter()
-        .anilistMeidaIdEqualTo(anilistMeidaId)
+        .anilistMediaIdEqualTo(anilistMediaId)
         .extensionIdEqualTo(extensionId)
         .indexEqualTo(index)
         .watch(fireImmediately: true)
@@ -53,8 +53,8 @@ class EpisodeDataService extends ChangeNotifier {
 
   Future<void> updateEpisodeProgress({
     EpisodeData? episode,
-    double? progress,
-    double? total,
+    int? progress,
+    int? total,
   }) async {
     if (episode == null) return;
 

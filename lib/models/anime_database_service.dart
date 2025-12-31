@@ -26,9 +26,9 @@ class AnimeDatabaseService extends ChangeNotifier {
     await getAnimeDatabases();
   }
 
-  Future<void> addAnimeDatabases(MetiaAnime matchedAnime, int anilistMeidaId, int extensionId) async {
+  Future<void> addAnimeDatabases(MetiaAnime matchedAnime, int anilistMediaId, int extensionId) async {
     AnimeDatabase anime = AnimeDatabase()
-      ..anilistMeidaId = anilistMeidaId
+      ..anilistMediaId = anilistMediaId
       ..extensionId = extensionId
       ..matchedAnime = matchedAnime;
     anime.lastModified = DateTime.now(); // Set lastModified
@@ -38,8 +38,8 @@ class AnimeDatabaseService extends ChangeNotifier {
     await getAnimeDatabases();
   }
 
-  Future<void> updateAnimeDatabases(MetiaAnime matchedAnime, int anilistMeidaId, int extensionId) async {
-    AnimeDatabase? anime = getAnimeDataOf(anilistMeidaId, extensionId);
+  Future<void> updateAnimeDatabases(MetiaAnime matchedAnime, int anilistMediaId, int extensionId) async {
+    AnimeDatabase? anime = getAnimeDataOf(anilistMediaId, extensionId);
     if (anime == null) return; // Add null check for safety
     anime.matchedAnime = matchedAnime;
     anime.lastModified = DateTime.now(); // Set lastModified
@@ -49,18 +49,18 @@ class AnimeDatabaseService extends ChangeNotifier {
     await getAnimeDatabases();
   }
 
-  AnimeDatabase? getAnimeDataOf(int anilistMeidaId, int extensionId) {
+  AnimeDatabase? getAnimeDataOf(int anilistMediaId, int extensionId) {
     return currentAnimeDatabase
         .where(
-          (animeDatabase) => animeDatabase.anilistMeidaId == anilistMeidaId && animeDatabase.extensionId == extensionId,
+          (animeDatabase) => animeDatabase.anilistMediaId == anilistMediaId && animeDatabase.extensionId == extensionId,
         )
         .first;
   }
 
-  bool existsInDatabse(int anilistMeidaId, int extensionId) {
+  bool existsInDatabse(int anilistMediaId, int extensionId) {
     bool exists = currentAnimeDatabase
         .where(
-          (animeDatabase) => animeDatabase.anilistMeidaId == anilistMeidaId && animeDatabase.extensionId == extensionId,
+          (animeDatabase) => animeDatabase.anilistMediaId == anilistMediaId && animeDatabase.extensionId == extensionId,
         )
         .isNotEmpty;
     return exists;
