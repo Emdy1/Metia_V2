@@ -17,6 +17,7 @@ import 'package:metia/models/episode_database.dart';
 import 'package:metia/models/episode_history_instance.dart';
 import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
+import 'package:metia/services/sync_service.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:provider/provider.dart';
 
@@ -211,19 +212,24 @@ class _PlayerPageState extends State<PlayerPage> {
 
   @override
   void initState() {
+    Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (mounted) {
+        final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
+        if (token != null) {
+          Provider.of<SyncService>(context, listen: false).sync(token);
+        }
+      }
+    });
+
     super.initState();
-    extensionServices =
-        Provider.of<ExtensionRuntimeManager>(context, listen: false)
-            .extensionServices;
-    episodeDataService =
-        Provider.of<EpisodeDataService>(context, listen: false);
+    extensionServices = Provider.of<ExtensionRuntimeManager>(context, listen: false).extensionServices;
+    episodeDataService = Provider.of<EpisodeDataService>(context, listen: false);
     runtime = Provider.of<ExtensionRuntimeManager>(context, listen: false);
 
     _setupEpisodeData();
 
     // Force landscape
-    SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     // Listeners
@@ -254,24 +260,32 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _setupEpisodeData() async {
-    final historyService =
-        Provider.of<EpisodeHistoryService>(context, listen: false);
+    final historyService = Provider.of<EpisodeHistoryService>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     epIndex = widget.episodeList.indexWhere((e) => e == widget.episodeData);
     if (epIndex == -1) epIndex = 0;
 
     // Add to history
-    historyService.addEpisodeHistory(EpisodeHistoryInstance()
-      ..episode = widget.episodeData
-      ..title = widget.animeData.name
-      ..episodeNumber = epIndex
-      ..anilistMediaId = widget.mediaListEntry.media.id
-      ..extensionId = runtime.extensionServices.mainExtension!.id
-      ..seen = (widget.mediaListEntry.progress ?? 0) > epIndex
-      ..parentList = widget.episodeList
-      ..anime = widget.animeData
-      ..lastModified = DateTime.now()); // Add this line
+    historyService.addEpisodeHistory(
+      EpisodeHistoryInstance()
+        ..episode = widget.episodeData
+        ..title = widget.animeData.name
+        ..episodeNumber = epIndex
+        ..anilistMediaId = widget.mediaListEntry.media.id
+        ..extensionId = runtime.extensionServices.mainExtension!.id
+        ..seen = (widget.mediaListEntry.progress ?? 0) > epIndex
+        ..parentList = widget.episodeList
+        ..anime = widget.animeData
+        ..lastModified = DateTime.now(),
+    ); // Add this line
+
+    if (mounted) {
+      final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
+      if (token != null) {
+        Provider.of<SyncService>(context, listen: false).sync(token);
+      }
+    }
 
     // Get or create episode progress data
     final currentExtensionId = extensionServices.mainExtension!.id;
@@ -291,8 +305,7 @@ class _PlayerPageState extends State<PlayerPage> {
       epData.lastModified = DateTime.now(); // Add this line
       await episodeDataService.addEpisodeData(epData);
       // Re-fetch to ensure we have the Isar-managed instance
-      epData = await episodeDataService.getEpisodeDataOf(
-          widget.mediaListEntry.media.id, currentExtensionId, epIndex);
+      epData = await episodeDataService.getEpisodeDataOf(widget.mediaListEntry.media.id, currentExtensionId, epIndex);
     }
 
     if (epData == null) return; // Should not happen
@@ -321,9 +334,7 @@ class _PlayerPageState extends State<PlayerPage> {
               Tools.updateAnimeTracking(
                 mediaId: widget.mediaListEntry.media.id,
                 progress: epIndex + 1,
-                status: widget.mediaListEntry.media.episodes == epIndex + 1
-                    ? "COMPLETED"
-                    : "CURRENT",
+                status: widget.mediaListEntry.media.episodes == epIndex + 1 ? "COMPLETED" : "CURRENT",
                 accessToken: accessToken,
               );
             });
@@ -333,8 +344,7 @@ class _PlayerPageState extends State<PlayerPage> {
     });
   }
 
-  Future<void> initPlayer(
-      bool useDefaultLink, String m3u8, EpisodeData epData) async {
+  Future<void> initPlayer(bool useDefaultLink, String m3u8, EpisodeData epData) async {
     await player.open(
       Media(
         useDefaultLink ? widget.animeStreamingData.m3u8Link : m3u8,

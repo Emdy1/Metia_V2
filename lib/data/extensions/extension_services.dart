@@ -32,6 +32,7 @@ class ExtensionServices extends ChangeNotifier {
       await db.extensions.put(extension);
     });
     await getExtensions();
+    
   }
 
   /// Fetch all extensions and update local list

@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
 import 'package:metia/data/extensions/extension.dart';
@@ -17,8 +20,8 @@ import 'package:metia/models/episode_history_service.dart';
 enum SyncStatus { idle, syncing, success, error }
 
 class SyncService extends ChangeNotifier {
-  final String baseUrl = 'https://metiasync.onrender.com';
-  //final String baseUrl = 'http://localhost:3000';
+  // final String baseUrl = 'https://metiasync.onrender.com';
+  final String baseUrl = 'http://localhost:3000';
   SyncStatus _status = SyncStatus.idle;
   SyncStatus get status => _status;
 
@@ -26,6 +29,9 @@ class SyncService extends ChangeNotifier {
   final AnimeDatabaseService animeDatabaseService;
   final EpisodeHistoryService episodeHistoryService;
   final EpisodeDataService episodeDataService;
+
+  Timer? _timer;
+  bool _disposed = false;
 
   SyncService({
     required this.extensionServices,
@@ -50,11 +56,24 @@ class SyncService extends ChangeNotifier {
     };
   }
 
+  void startSycning(String jwtToken) {
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      sync(jwtToken);
+      log("the data is synced");
+    });
+  }
+
+  void _safeNotify() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_disposed) notifyListeners();
+    });
+  }
+
   /// Orchestrates the sync process: Upload -> Download -> Update Timestamp
   Future<void> sync(String jwtToken) async {
     if (_status == SyncStatus.syncing) return;
     _status = SyncStatus.syncing;
-    notifyListeners();
+    _safeNotify();
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -75,11 +94,11 @@ class SyncService extends ChangeNotifier {
       _status = SyncStatus.error;
       rethrow; // Allow UI to handle the error
     } finally {
-      notifyListeners();
+      _safeNotify();
       // Reset status to idle after a few seconds to allow for another sync
       Future.delayed(const Duration(seconds: 3), () {
         _status = SyncStatus.idle;
-        notifyListeners();
+        _safeNotify();
       });
     }
   }
@@ -119,6 +138,13 @@ class SyncService extends ChangeNotifier {
     } else {
       throw Exception('Failed to download sync: ${response.body}');
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> mergeServerData(Map<String, dynamic> data) async {

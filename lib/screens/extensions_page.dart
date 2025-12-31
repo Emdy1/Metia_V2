@@ -2,7 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:metia/data/extensions/extension.dart';
 import 'package:metia/data/extensions/extension_services.dart';
+import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
+import 'package:metia/services/sync_service.dart';
 import 'package:provider/provider.dart';
 
 class ExtensionsPage extends StatefulWidget {
@@ -35,18 +37,17 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                 ),
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                 FilledButton(
                   onPressed: () async {
-                    final success = await context
-                        .read<ExtensionServices>()
-                        .addExtensionFromUrl(textController.text);
+                    final success = await context.read<ExtensionServices>().addExtensionFromUrl(textController.text);
 
                     if (success == true) {
                       Navigator.pop(context);
+                      final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
+                      if (token != null) {
+                        Provider.of<SyncService>(context, listen: false).sync(token);
+                      }
                     } else {
                       setState(() {
                         hasError = true; // 🔴 turns TextField red
@@ -67,10 +68,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
     // context.watch<ExtensionServices>().getExtensions();
   }
 
-  Future<bool> deletExtension(
-    Extension extension,
-    ExtensionServices extensionServices,
-  ) async {
+  Future<bool> deletExtension(Extension extension, ExtensionServices extensionServices) async {
     final isMain = extension.isMain == true;
 
     final result = await showDialog<bool>(
@@ -90,15 +88,9 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
             style: theme.textTheme.bodyMedium,
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: colors.error,
-                foregroundColor: colors.onError,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: colors.error, foregroundColor: colors.onError),
               onPressed: () async {
                 await extensionServices.deleteExtension(extension.id);
 
@@ -144,10 +136,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Extension Page"),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(.1),
-          child: Divider(height: .1),
-        ),
+        bottom: PreferredSize(preferredSize: Size.fromHeight(.1), child: Divider(height: .1)),
       ),
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
@@ -196,26 +185,17 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                           color: Theme.of(context).colorScheme.onError,
                         ),
                       ),
-                      Icon(
-                        Icons.delete,
-                        color: Theme.of(context).colorScheme.onError,
-                      ),
+                      Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
                     ],
                   ),
                 ),
-                confirmDismiss: (_) =>
-                    deletExtension(extension, extensionServices),
+                confirmDismiss: (_) => deletExtension(extension, extensionServices),
                 onDismissed: (_) {},
                 child: Container(
                   color: Provider.of<ThemeProvider>(context).scheme.onSecondary,
                   height: 100,
                   child: Padding(
-                    padding: EdgeInsetsGeometry.only(
-                      top: 8,
-                      left: 8,
-                      right: 24,
-                      bottom: 8,
-                    ),
+                    padding: EdgeInsetsGeometry.only(top: 8, left: 8, right: 24, bottom: 8),
                     child: Row(
                       children: [
                         SizedBox(
@@ -224,9 +204,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(14),
                             child: CachedNetworkImage(
-                              imageUrl:
-                                  extension.iconUrl ??
-                                  "https://cdn-icons-png.flaticon.com/512/8114/8114406.png",
+                              imageUrl: extension.iconUrl ?? "https://cdn-icons-png.flaticon.com/512/8114/8114406.png",
                             ),
                           ),
                         ),
@@ -251,9 +229,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                                 Text(
                                   "Author: ${extension.author ?? "Broken Extension"}",
                                   style: TextStyle(
-                                    color: Provider.of<ThemeProvider>(
-                                      context,
-                                    ).scheme.secondary,
+                                    color: Provider.of<ThemeProvider>(context).scheme.secondary,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -268,9 +244,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                                       ? "Dub"
                                       : "not specified"}",
                                   style: TextStyle(
-                                    color: Provider.of<ThemeProvider>(
-                                      context,
-                                    ).scheme.secondary,
+                                    color: Provider.of<ThemeProvider>(context).scheme.secondary,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -283,9 +257,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                           value: extension.isMain,
                           onChanged: isEditingMainExtension
                               ? (isMain) async {
-                                  await extensionServices.setMainExtension(
-                                    extension,
-                                  );
+                                  await extensionServices.setMainExtension(extension);
                                   setState(() {});
                                 }
                               : null,

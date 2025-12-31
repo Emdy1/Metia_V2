@@ -17,6 +17,7 @@ import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/extensions_page.dart';
 import 'package:metia/screens/player_page.dart';
+import 'package:metia/services/sync_service.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:metia/widgets/custom_tab.dart';
 import 'package:metia/widgets/custom_widgets.dart';
@@ -268,11 +269,17 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       print("Error finding matching anime: $e");
     }
 
-    animeDatabaseService.addAnimeDatabases(
+    await animeDatabaseService.addAnimeDatabases(
       matchedAnime!,
       widget.anime.media.id,
       runtime.extensionServices.mainExtension!.id,
     );
+    if (mounted) {
+      final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
+      if (token != null) {
+        Provider.of<SyncService>(context, listen: false).sync(token);
+      }
+    }
 
     isGettingEpisodes = true;
     startGettingAnimeEpisodes();
