@@ -45,6 +45,7 @@ class EpisodeHistoryService extends ChangeNotifier {
 
   Future<void> updateEpisodeHistory(EpisodeHistoryInstance episode) async {
     await db.writeTxn(() async {
+      episode.lastModified = DateTime.now(); // Add this line
       await db.episodeHistoryInstances.put(episode);
     });
     await getEpisodeHistories();

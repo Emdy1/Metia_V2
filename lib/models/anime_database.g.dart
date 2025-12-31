@@ -27,8 +27,13 @@ const AnimeDatabaseSchema = CollectionSchema(
       name: r'extensionId',
       type: IsarType.long,
     ),
-    r'matchedAnime': PropertySchema(
+    r'lastModified': PropertySchema(
       id: 2,
+      name: r'lastModified',
+      type: IsarType.dateTime,
+    ),
+    r'matchedAnime': PropertySchema(
+      id: 3,
       name: r'matchedAnime',
       type: IsarType.object,
       target: r'MetiaAnime',
@@ -73,8 +78,9 @@ void _animeDatabaseSerialize(
 ) {
   writer.writeLong(offsets[0], object.anilistMeidaId);
   writer.writeLong(offsets[1], object.extensionId);
+  writer.writeDateTime(offsets[2], object.lastModified);
   writer.writeObject<MetiaAnime>(
-    offsets[2],
+    offsets[3],
     allOffsets,
     MetiaAnimeSchema.serialize,
     object.matchedAnime,
@@ -91,8 +97,9 @@ AnimeDatabase _animeDatabaseDeserialize(
   object.anilistMeidaId = reader.readLongOrNull(offsets[0]);
   object.extensionId = reader.readLongOrNull(offsets[1]);
   object.id = id;
+  object.lastModified = reader.readDateTimeOrNull(offsets[2]);
   object.matchedAnime = reader.readObjectOrNull<MetiaAnime>(
-    offsets[2],
+    offsets[3],
     MetiaAnimeSchema.deserialize,
     allOffsets,
   );
@@ -111,6 +118,8 @@ P _animeDatabaseDeserializeProp<P>(
     case 1:
       return (reader.readLongOrNull(offset)) as P;
     case 2:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 3:
       return (reader.readObjectOrNull<MetiaAnime>(
         offset,
         MetiaAnimeSchema.deserialize,
@@ -420,6 +429,80 @@ extension AnimeDatabaseQueryFilter
   }
 
   QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
+      lastModifiedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
+      lastModifiedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
+      lastModifiedEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
+      lastModifiedGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
+      lastModifiedLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
+      lastModifiedBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastModified',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterFilterCondition>
       matchedAnimeIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -479,6 +562,20 @@ extension AnimeDatabaseQuerySortBy
       return query.addSortBy(r'extensionId', Sort.desc);
     });
   }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
+      sortByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
+      sortByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
 }
 
 extension AnimeDatabaseQuerySortThenBy
@@ -521,6 +618,20 @@ extension AnimeDatabaseQuerySortThenBy
       return query.addSortBy(r'id', Sort.desc);
     });
   }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
+      thenByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QAfterSortBy>
+      thenByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
 }
 
 extension AnimeDatabaseQueryWhereDistinct
@@ -536,6 +647,13 @@ extension AnimeDatabaseQueryWhereDistinct
       distinctByExtensionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'extensionId');
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, AnimeDatabase, QDistinct>
+      distinctByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastModified');
     });
   }
 }
@@ -557,6 +675,13 @@ extension AnimeDatabaseQueryProperty
   QueryBuilder<AnimeDatabase, int?, QQueryOperations> extensionIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'extensionId');
+    });
+  }
+
+  QueryBuilder<AnimeDatabase, DateTime?, QQueryOperations>
+      lastModifiedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastModified');
     });
   }
 

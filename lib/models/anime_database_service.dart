@@ -13,36 +13,36 @@ class AnimeDatabaseService extends ChangeNotifier {
   final List<AnimeDatabase> currentAnimeDatabase = [];
 
   Future<void> getAnimeDatabases() async {
-    List<AnimeDatabase> episodeDatas = await db.animeDatabases
-        .where()
-        .findAll();
+    List<AnimeDatabase> episodeDatas = await db.animeDatabases.where().findAll();
     currentAnimeDatabase.clear();
     currentAnimeDatabase.addAll(episodeDatas);
     notifyListeners();
   }
 
-  Future<void> addAnimeDatabases(
-    MetiaAnime matchedAnime,
-    int anilistMeidaId,
-    int extensionId,
-  ) async {
+  Future<void> addAnimeDatabases2(AnimeDatabase animedb) async {
+    await db.writeTxn(() async {
+      await db.animeDatabases.put(animedb);
+    });
+    await getAnimeDatabases();
+  }
+
+  Future<void> addAnimeDatabases(MetiaAnime matchedAnime, int anilistMeidaId, int extensionId) async {
     AnimeDatabase anime = AnimeDatabase()
       ..anilistMeidaId = anilistMeidaId
       ..extensionId = extensionId
       ..matchedAnime = matchedAnime;
+    anime.lastModified = DateTime.now(); // Set lastModified
     await db.writeTxn(() async {
       await db.animeDatabases.put(anime);
     });
     await getAnimeDatabases();
   }
 
-  Future<void> updateAnimeDatabases(
-    MetiaAnime matchedAnime,
-    int anilistMeidaId,
-    int extensionId,
-  ) async {
+  Future<void> updateAnimeDatabases(MetiaAnime matchedAnime, int anilistMeidaId, int extensionId) async {
     AnimeDatabase? anime = getAnimeDataOf(anilistMeidaId, extensionId);
-    anime!.matchedAnime = matchedAnime;
+    if (anime == null) return; // Add null check for safety
+    anime.matchedAnime = matchedAnime;
+    anime.lastModified = DateTime.now(); // Set lastModified
     await db.writeTxn(() async {
       await db.animeDatabases.put(anime);
     });
@@ -52,9 +52,7 @@ class AnimeDatabaseService extends ChangeNotifier {
   AnimeDatabase? getAnimeDataOf(int anilistMeidaId, int extensionId) {
     return currentAnimeDatabase
         .where(
-          (animeDatabase) =>
-              animeDatabase.anilistMeidaId == anilistMeidaId &&
-              animeDatabase.extensionId == extensionId,
+          (animeDatabase) => animeDatabase.anilistMeidaId == anilistMeidaId && animeDatabase.extensionId == extensionId,
         )
         .first;
   }
@@ -62,9 +60,7 @@ class AnimeDatabaseService extends ChangeNotifier {
   bool existsInDatabse(int anilistMeidaId, int extensionId) {
     bool exists = currentAnimeDatabase
         .where(
-          (animeDatabase) =>
-              animeDatabase.anilistMeidaId == anilistMeidaId &&
-              animeDatabase.extensionId == extensionId,
+          (animeDatabase) => animeDatabase.anilistMeidaId == anilistMeidaId && animeDatabase.extensionId == extensionId,
         )
         .isNotEmpty;
     return exists;

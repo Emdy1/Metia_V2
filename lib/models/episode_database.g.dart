@@ -32,13 +32,18 @@ const EpisodeDataSchema = CollectionSchema(
       name: r'index',
       type: IsarType.long,
     ),
-    r'progress': PropertySchema(
+    r'lastModified': PropertySchema(
       id: 3,
+      name: r'lastModified',
+      type: IsarType.dateTime,
+    ),
+    r'progress': PropertySchema(
+      id: 4,
       name: r'progress',
       type: IsarType.double,
     ),
     r'total': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'total',
       type: IsarType.double,
     )
@@ -75,8 +80,9 @@ void _episodeDataSerialize(
   writer.writeLong(offsets[0], object.anilistMeidaId);
   writer.writeLong(offsets[1], object.extensionId);
   writer.writeLong(offsets[2], object.index);
-  writer.writeDouble(offsets[3], object.progress);
-  writer.writeDouble(offsets[4], object.total);
+  writer.writeDateTime(offsets[3], object.lastModified);
+  writer.writeDouble(offsets[4], object.progress);
+  writer.writeDouble(offsets[5], object.total);
 }
 
 EpisodeData _episodeDataDeserialize(
@@ -90,8 +96,9 @@ EpisodeData _episodeDataDeserialize(
   object.extensionId = reader.readLongOrNull(offsets[1]);
   object.id = id;
   object.index = reader.readLongOrNull(offsets[2]);
-  object.progress = reader.readDoubleOrNull(offsets[3]);
-  object.total = reader.readDoubleOrNull(offsets[4]);
+  object.lastModified = reader.readDateTimeOrNull(offsets[3]);
+  object.progress = reader.readDoubleOrNull(offsets[4]);
+  object.total = reader.readDoubleOrNull(offsets[5]);
   return object;
 }
 
@@ -109,8 +116,10 @@ P _episodeDataDeserializeProp<P>(
     case 2:
       return (reader.readLongOrNull(offset)) as P;
     case 3:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 4:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 5:
       return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -483,6 +492,80 @@ extension EpisodeDataQueryFilter
   }
 
   QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      lastModifiedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      lastModifiedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      lastModifiedEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      lastModifiedGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      lastModifiedLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
+      lastModifiedBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastModified',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterFilterCondition>
       progressIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -690,6 +773,19 @@ extension EpisodeDataQuerySortBy
     });
   }
 
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> sortByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy>
+      sortByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
+
   QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> sortByProgress() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'progress', Sort.asc);
@@ -766,6 +862,19 @@ extension EpisodeDataQuerySortThenBy
     });
   }
 
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> thenByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy>
+      thenByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
+
   QueryBuilder<EpisodeData, EpisodeData, QAfterSortBy> thenByProgress() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'progress', Sort.asc);
@@ -811,6 +920,12 @@ extension EpisodeDataQueryWhereDistinct
     });
   }
 
+  QueryBuilder<EpisodeData, EpisodeData, QDistinct> distinctByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastModified');
+    });
+  }
+
   QueryBuilder<EpisodeData, EpisodeData, QDistinct> distinctByProgress() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'progress');
@@ -847,6 +962,13 @@ extension EpisodeDataQueryProperty
   QueryBuilder<EpisodeData, int?, QQueryOperations> indexProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'index');
+    });
+  }
+
+  QueryBuilder<EpisodeData, DateTime?, QQueryOperations>
+      lastModifiedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastModified');
     });
   }
 

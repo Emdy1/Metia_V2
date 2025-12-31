@@ -10,18 +10,26 @@ class AnimeDatabase {
   int? anilistMeidaId; // AniList media id of the anime
 
   MetiaAnime? matchedAnime;
+  DateTime? lastModified;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'extensionId': extensionId,
-    'anilistMeidaId': anilistMeidaId,
-    'matchedAnime': matchedAnime?.toJson(),
-  };
+        'id': id,
+        'extensionId': extensionId,
+        'anilistMeidaId': anilistMeidaId,
+        'matchedAnime': matchedAnime?.toJson(),
+        'lastModified': lastModified?.toIso8601String(),
+      };
 
   AnimeDatabase fromJson(Map<String, dynamic> json) {
+    id = json['id'] ?? id;
     extensionId = json['extensionId'];
     anilistMeidaId = json['anilistMeidaId'];
-    matchedAnime = json['matchedAnime'] != null ? MetiaAnime().fromJson(json['matchedAnime']) : null;
+    matchedAnime = json['matchedAnime'] != null
+        ? MetiaAnime().fromJson(json['matchedAnime'])
+        : null;
+    lastModified = json['lastModified'] != null
+        ? DateTime.parse(json['lastModified'])
+        : DateTime.now();
     return this;
   }
 }
@@ -33,7 +41,8 @@ class MetiaAnime {
   late String poster;
   late String url;
 
-  Map<String, dynamic> toJson() => {'name': name, 'length': length, 'poster': poster, 'url': url};
+  Map<String, dynamic> toJson() =>
+      {'name': name, 'length': length, 'poster': poster, 'url': url};
   MetiaAnime fromJson(Map<String, dynamic> json) {
     name = json['name'];
     length = json['length'];
@@ -51,7 +60,8 @@ class MetiaEpisode {
   late bool isDub;
   late bool isSub;
 
-  Map<String, dynamic> toJson() => {'poster': poster, 'name': name, 'url': url, 'isDub': isDub, 'isSub': isSub};
+  Map<String, dynamic> toJson() =>
+      {'poster': poster, 'name': name, 'url': url, 'isDub': isDub, 'isSub': isSub};
 }
 
 @embedded

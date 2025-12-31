@@ -45,19 +45,24 @@ const EpisodeHistoryInstanceSchema = CollectionSchema(
       name: r'extensionId',
       type: IsarType.long,
     ),
-    r'parentList': PropertySchema(
+    r'lastModified': PropertySchema(
       id: 5,
+      name: r'lastModified',
+      type: IsarType.dateTime,
+    ),
+    r'parentList': PropertySchema(
+      id: 6,
       name: r'parentList',
       type: IsarType.objectList,
       target: r'MetiaEpisode',
     ),
     r'seen': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'seen',
       type: IsarType.bool,
     ),
     r'title': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'title',
       type: IsarType.string,
     )
@@ -145,14 +150,15 @@ void _episodeHistoryInstanceSerialize(
   );
   writer.writeLong(offsets[3], object.episodeNumber);
   writer.writeLong(offsets[4], object.extensionId);
+  writer.writeDateTime(offsets[5], object.lastModified);
   writer.writeObjectList<MetiaEpisode>(
-    offsets[5],
+    offsets[6],
     allOffsets,
     MetiaEpisodeSchema.serialize,
     object.parentList,
   );
-  writer.writeBool(offsets[6], object.seen);
-  writer.writeString(offsets[7], object.title);
+  writer.writeBool(offsets[7], object.seen);
+  writer.writeString(offsets[8], object.title);
 }
 
 EpisodeHistoryInstance _episodeHistoryInstanceDeserialize(
@@ -176,14 +182,15 @@ EpisodeHistoryInstance _episodeHistoryInstanceDeserialize(
   object.episodeNumber = reader.readLongOrNull(offsets[3]);
   object.extensionId = reader.readLongOrNull(offsets[4]);
   object.id = id;
+  object.lastModified = reader.readDateTimeOrNull(offsets[5]);
   object.parentList = reader.readObjectList<MetiaEpisode>(
-    offsets[5],
+    offsets[6],
     MetiaEpisodeSchema.deserialize,
     allOffsets,
     MetiaEpisode(),
   );
-  object.seen = reader.readBoolOrNull(offsets[6]);
-  object.title = reader.readStringOrNull(offsets[7]);
+  object.seen = reader.readBoolOrNull(offsets[7]);
+  object.title = reader.readStringOrNull(offsets[8]);
   return object;
 }
 
@@ -213,15 +220,17 @@ P _episodeHistoryInstanceDeserializeProp<P>(
     case 4:
       return (reader.readLongOrNull(offset)) as P;
     case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 6:
       return (reader.readObjectList<MetiaEpisode>(
         offset,
         MetiaEpisodeSchema.deserialize,
         allOffsets,
         MetiaEpisode(),
       )) as P;
-    case 6:
-      return (reader.readBoolOrNull(offset)) as P;
     case 7:
+      return (reader.readBoolOrNull(offset)) as P;
+    case 8:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -640,6 +649,80 @@ extension EpisodeHistoryInstanceQueryFilter on QueryBuilder<
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
+      QAfterFilterCondition> lastModifiedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
+      QAfterFilterCondition> lastModifiedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
+      QAfterFilterCondition> lastModifiedEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
+      QAfterFilterCondition> lastModifiedGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
+      QAfterFilterCondition> lastModifiedLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
+      QAfterFilterCondition> lastModifiedBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastModified',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance,
       QAfterFilterCondition> parentListIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1003,6 +1086,20 @@ extension EpisodeHistoryInstanceQuerySortBy
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
+      sortByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
+      sortByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
       sortBySeen() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'seen', Sort.asc);
@@ -1090,6 +1187,20 @@ extension EpisodeHistoryInstanceQuerySortThenBy on QueryBuilder<
   }
 
   QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
+      thenByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
+      thenByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QAfterSortBy>
       thenBySeen() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'seen', Sort.asc);
@@ -1138,6 +1249,13 @@ extension EpisodeHistoryInstanceQueryWhereDistinct
       distinctByExtensionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'extensionId');
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, EpisodeHistoryInstance, QDistinct>
+      distinctByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastModified');
     });
   }
 
@@ -1196,6 +1314,13 @@ extension EpisodeHistoryInstanceQueryProperty on QueryBuilder<
       extensionIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'extensionId');
+    });
+  }
+
+  QueryBuilder<EpisodeHistoryInstance, DateTime?, QQueryOperations>
+      lastModifiedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastModified');
     });
   }
 

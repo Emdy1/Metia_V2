@@ -270,7 +270,8 @@ class _PlayerPageState extends State<PlayerPage> {
       ..extensionId = runtime.extensionServices.mainExtension!.id
       ..seen = (widget.mediaListEntry.progress ?? 0) > epIndex
       ..parentList = widget.episodeList
-      ..anime = widget.animeData);
+      ..anime = widget.animeData
+      ..lastModified = DateTime.now()); // Add this line
 
     // Get or create episode progress data
     final currentExtensionId = extensionServices.mainExtension!.id;
@@ -287,6 +288,7 @@ class _PlayerPageState extends State<PlayerPage> {
         ..index = epIndex
         ..progress = 0
         ..total = 0;
+      epData.lastModified = DateTime.now(); // Add this line
       await episodeDataService.addEpisodeData(epData);
       // Re-fetch to ensure we have the Isar-managed instance
       epData = await episodeDataService.getEpisodeDataOf(

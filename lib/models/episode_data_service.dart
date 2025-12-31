@@ -65,6 +65,7 @@ class EpisodeDataService extends ChangeNotifier {
       if (total != null) {
         episode.total = total;
       }
+      episode.lastModified = DateTime.now(); // Set lastModified
       await db.episodeDatas.put(episode);
     });
   }

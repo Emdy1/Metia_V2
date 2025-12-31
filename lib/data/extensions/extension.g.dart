@@ -67,13 +67,18 @@ const ExtensionSchema = CollectionSchema(
       name: r'language',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(
+    r'lastModified': PropertySchema(
       id: 10,
+      name: r'lastModified',
+      type: IsarType.dateTime,
+    ),
+    r'name': PropertySchema(
+      id: 11,
       name: r'name',
       type: IsarType.string,
     ),
     r'version': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'version',
       type: IsarType.string,
     )
@@ -171,8 +176,9 @@ void _extensionSerialize(
   writer.writeString(offsets[7], object.jsCode);
   writer.writeString(offsets[8], object.jsCodeUrl);
   writer.writeString(offsets[9], object.language);
-  writer.writeString(offsets[10], object.name);
-  writer.writeString(offsets[11], object.version);
+  writer.writeDateTime(offsets[10], object.lastModified);
+  writer.writeString(offsets[11], object.name);
+  writer.writeString(offsets[12], object.version);
 }
 
 Extension _extensionDeserialize(
@@ -193,8 +199,9 @@ Extension _extensionDeserialize(
   object.jsCode = reader.readStringOrNull(offsets[7]);
   object.jsCodeUrl = reader.readStringOrNull(offsets[8]);
   object.language = reader.readStringOrNull(offsets[9]);
-  object.name = reader.readStringOrNull(offsets[10]);
-  object.version = reader.readStringOrNull(offsets[11]);
+  object.lastModified = reader.readDateTimeOrNull(offsets[10]);
+  object.name = reader.readStringOrNull(offsets[11]);
+  object.version = reader.readStringOrNull(offsets[12]);
   return object;
 }
 
@@ -226,8 +233,10 @@ P _extensionDeserializeProp<P>(
     case 9:
       return (reader.readStringOrNull(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 11:
+      return (reader.readStringOrNull(offset)) as P;
+    case 12:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1482,6 +1491,79 @@ extension ExtensionQueryFilter
     });
   }
 
+  QueryBuilder<Extension, Extension, QAfterFilterCondition>
+      lastModifiedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<Extension, Extension, QAfterFilterCondition>
+      lastModifiedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastModified',
+      ));
+    });
+  }
+
+  QueryBuilder<Extension, Extension, QAfterFilterCondition> lastModifiedEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Extension, Extension, QAfterFilterCondition>
+      lastModifiedGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Extension, Extension, QAfterFilterCondition>
+      lastModifiedLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastModified',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Extension, Extension, QAfterFilterCondition> lastModifiedBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastModified',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Extension, Extension, QAfterFilterCondition> nameIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1905,6 +1987,18 @@ extension ExtensionQuerySortBy on QueryBuilder<Extension, Extension, QSortBy> {
     });
   }
 
+  QueryBuilder<Extension, Extension, QAfterSortBy> sortByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Extension, Extension, QAfterSortBy> sortByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
+
   QueryBuilder<Extension, Extension, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -2066,6 +2160,18 @@ extension ExtensionQuerySortThenBy
     });
   }
 
+  QueryBuilder<Extension, Extension, QAfterSortBy> thenByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Extension, Extension, QAfterSortBy> thenByLastModifiedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastModified', Sort.desc);
+    });
+  }
+
   QueryBuilder<Extension, Extension, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -2161,6 +2267,12 @@ extension ExtensionQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Extension, Extension, QDistinct> distinctByLastModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastModified');
+    });
+  }
+
   QueryBuilder<Extension, Extension, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2242,6 +2354,12 @@ extension ExtensionQueryProperty
   QueryBuilder<Extension, String?, QQueryOperations> languageProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'language');
+    });
+  }
+
+  QueryBuilder<Extension, DateTime?, QQueryOperations> lastModifiedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastModified');
     });
   }
 

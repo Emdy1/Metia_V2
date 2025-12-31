@@ -14,26 +14,34 @@ class EpisodeHistoryInstance {
   int? extensionId;
   bool? seen;
   List<MetiaEpisode>? parentList;
+  DateTime? lastModified;
+
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'episodeNumber': episodeNumber,
-    'anilistMeidaId': anilistMeidaId,
-    'extensionId': extensionId,
-    'seen': seen,
-    'episode': episode != null
-        ? {
-            'poster': episode!.poster,
-            'name': episode!.name,
-            'url': episode!.url,
-            'isDub': episode!.isDub,
-            'isSub': episode!.isSub,
-          }
-        : null,
-    'anime': anime != null
-        ? {'name': anime!.name, 'length': anime!.length, 'poster': anime!.poster, 'url': anime!.url}
-        : null,
-  };
+        'id': id,
+        'title': title,
+        'episodeNumber': episodeNumber,
+        'anilistMeidaId': anilistMeidaId,
+        'extensionId': extensionId,
+        'seen': seen,
+        'episode': episode != null
+            ? {
+                'poster': episode!.poster,
+                'name': episode!.name,
+                'url': episode!.url,
+                'isDub': episode!.isDub,
+                'isSub': episode!.isSub,
+              }
+            : null,
+        'anime': anime != null
+            ? {
+                'name': anime!.name,
+                'length': anime!.length,
+                'poster': anime!.poster,
+                'url': anime!.url
+              }
+            : null,
+        'lastModified': lastModified?.toIso8601String(),
+      };
 
   EpisodeHistoryInstance fromJson(Map<String, dynamic> json) {
     id = json['id'] ?? id;
@@ -57,6 +65,9 @@ class EpisodeHistoryInstance {
         ..poster = json['anime']['poster']
         ..url = json['anime']['url'];
     }
+    lastModified = json['lastModified'] != null
+        ? DateTime.parse(json['lastModified'])
+        : DateTime.now();
     return this;
   }
 }

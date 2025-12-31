@@ -28,6 +28,7 @@ class ExtensionServices extends ChangeNotifier {
       if (currentExtensions.isEmpty) {
         extension.isMain = true;
       }
+      extension.lastModified = DateTime.now(); // Set lastModified
       await db.extensions.put(extension);
     });
     await getExtensions();
@@ -57,6 +58,7 @@ class ExtensionServices extends ChangeNotifier {
         if (remainingExtensions.isNotEmpty) {
           final firstExtension = remainingExtensions.first;
           firstExtension.isMain = true;
+          firstExtension.lastModified = DateTime.now(); // Set lastModified
           await db.extensions.put(firstExtension);
         }
       }
@@ -89,12 +91,14 @@ class ExtensionServices extends ChangeNotifier {
       for (var ext in allExtensions) {
         if (ext.id != extension.id && ext.isMain == true) {
           ext.isMain = false;
+          ext.lastModified = DateTime.now(); // Set lastModified
           await db.extensions.put(ext);
         }
       }
 
       // Set the chosen extension as main
       extension.isMain = true;
+      extension.lastModified = DateTime.now(); // Set lastModified
       await db.extensions.put(extension);
     });
 

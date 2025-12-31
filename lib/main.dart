@@ -10,6 +10,7 @@ import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/home_page.dart';
+import 'package:metia/services/sync_service.dart';
 
 import 'package:provider/provider.dart';
 
@@ -17,7 +18,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
 
-  //never delet this, it should be run only after "WidgetsFlutterBinding.ensureInitialized();"
+  //never delete this, it should be run only after "WidgetsFlutterBinding.ensureInitialized();"
   await IsarServices.setup();
   await UserData.initialize();
   await ExtensionServices.setup();
@@ -35,11 +36,20 @@ void main() async {
   final animeHistoryService = EpisodeHistoryService();
   await animeHistoryService.getEpisodeHistories();
 
+  //init sync service
+
   //init ScriptExecutor early
   final extensionServices = ExtensionServices();
   await extensionServices.getExtensions();
   final manager = ExtensionRuntimeManager(extensionServices);
   await manager.init(); // executor ready here
+
+  final syncService = SyncService(
+    animeDatabaseService: animeDatabaseService,
+    episodeHistoryService: animeHistoryService,
+    extensionServices: extensionServices,
+    episodeDataService: episodeDataService
+  );
 
   //main entry
   runApp(
@@ -52,6 +62,7 @@ void main() async {
         ChangeNotifierProvider.value(value: episodeDataService),
         ChangeNotifierProvider.value(value: animeDatabaseService),
         ChangeNotifierProvider.value(value: animeHistoryService),
+        ChangeNotifierProvider.value(value: syncService),
       ],
       builder: (context, _) {
         final themeProvider = context.watch<ThemeProvider>();

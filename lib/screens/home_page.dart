@@ -16,6 +16,7 @@ import 'package:metia/screens/home/library_page.dart';
 import 'package:metia/screens/home/profile_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:metia/screens/logging_page.dart';
+import 'package:metia/services/sync_service.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -129,7 +130,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return AppBar(
       surfaceTintColor: Colors.transparent,
       backgroundColor: Colors.transparent,
-      actions: [_AppBarMenu()],
+      actions: const [_SyncIndicator(), _AppBarMenu()],
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
         child: ClipRRect(
@@ -241,6 +242,34 @@ class _AppBarMenu extends StatelessWidget {
   }
 }
 
+class _SyncIndicator extends StatelessWidget {
+  const _SyncIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SyncService>(
+      builder: (context, syncService, child) {
+        switch (syncService.status) {
+          case SyncStatus.syncing:
+            return Container(
+              padding: const EdgeInsets.all(12.0),
+              width: 48.0,
+              height: 48.0,
+              child: const CircularProgressIndicator(strokeWidth: 2.0),
+            );
+          case SyncStatus.success:
+            return const Icon(Icons.check_circle, color: Colors.green);
+          case SyncStatus.error:
+            return const Icon(Icons.error, color: Colors.red);
+          case SyncStatus.idle:
+          default:
+            return const SizedBox.shrink(); // Show nothing when idle
+        }
+      },
+    );
+  }
+}
+
 List<PopupMenuEntry<String>> _defaultMenuItemList(context) {
   final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
   return [
@@ -261,6 +290,7 @@ List<PopupMenuEntry<String>> _loggedMenuItemList(BuildContext context) {
 
   return [
     const PopupMenuItem<String>(enabled: false, height: 36, child: Text('Library')),
+    const PopupMenuItem<String>(value: 'sync', height: 36, child: Text('Sync')),
     const PopupMenuItem<String>(value: 'refresh', height: 36, child: Text('Refresh')),
     const PopupMenuItem<String>(value: 'createList', height: 36, child: Text('Create a New List')),
     const PopupMenuItem<String>(height: 36, enabled: false, child: Text('Profile', textAlign: TextAlign.end)),
@@ -280,6 +310,12 @@ List<PopupMenuEntry<String>> _loggedMenuItemList(BuildContext context) {
 
 void _switchMenuButtons(String value, BuildContext context) {
   switch (value) {
+    case 'sync':
+      final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
+      if (token != null) {
+        Provider.of<SyncService>(context, listen: false).sync(token);
+      }
+      break;
     case 'clearHistory':
       Provider.of<EpisodeHistoryService>(context, listen: false).deleteAllEpisodeHistory();
       break;

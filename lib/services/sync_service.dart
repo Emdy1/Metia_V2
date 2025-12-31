@@ -1,66 +1,97 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
 import 'package:metia/data/extensions/extension.dart';
 import 'package:metia/data/isar_services/isar_services.dart';
+import 'package:metia/models/episode_data_service.dart';
 import 'package:metia/models/episode_history_instance.dart';
 import '../models/anime_database.dart';
 import '../models/episode_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SyncService {
+import 'package:metia/data/extensions/extension_services.dart';
+import 'package:metia/models/anime_database_service.dart';
+import 'package:metia/models/episode_history_service.dart';
+
+enum SyncStatus { idle, syncing, success, error }
+
+class SyncService extends ChangeNotifier {
   final String baseUrl = 'https://metiasync.onrender.com';
+  // final String baseUrl = 'http://localhost:3000';
+  SyncStatus _status = SyncStatus.idle;
+  SyncStatus get status => _status;
 
-  SyncService();
+  final ExtensionServices extensionServices;
+  final AnimeDatabaseService animeDatabaseService;
+  final EpisodeHistoryService episodeHistoryService;
+  final EpisodeDataService episodeDataService;
 
-  Future<Map<String, dynamic>> getLocalSyncData() async {
+  SyncService({
+    required this.extensionServices,
+    required this.animeDatabaseService,
+    required this.episodeHistoryService,
+    required this.episodeDataService,
+  });
+
+  Future<Map<String, dynamic>> getLocalSyncData(DateTime since) async {
     final isar = IsarServices.isar;
 
-    final animes = await isar.animeDatabases.where().findAll();
-    final episodes = await isar.episodeDatas.where().findAll();
-    final extensions = await isar.extensions.where().findAll();
-    final history = await isar.episodeHistoryInstances.where().findAll();
+    final animes = await isar.animeDatabases.where().filter().lastModifiedGreaterThan(since).findAll();
+    final episodes = await isar.episodeDatas.where().filter().lastModifiedGreaterThan(since).findAll();
+    final extensions = await isar.extensions.where().filter().lastModifiedGreaterThan(since).findAll();
+    final history = await isar.episodeHistoryInstances.where().filter().lastModifiedGreaterThan(since).findAll();
 
     return {
       'animes': animes.map((e) => e.toJson()).toList(),
       'episodes': episodes.map((e) => e.toJson()).toList(),
       'extensions': extensions.map((e) => e.toJson()).toList(),
-      'history': history.map((h) => h.toJson()).toList(), // <-- added
+      'history': history.map((h) => h.toJson()).toList(),
     };
   }
 
   /// Orchestrates the sync process: Upload -> Download -> Update Timestamp
   Future<void> sync(String jwtToken) async {
-    try {
-      // 1. Upload local data (Note: Currently uploads everything. Optimization needed for large DBs)
-      await uploadSyncData(jwtToken);
+    if (_status == SyncStatus.syncing) return;
+    _status = SyncStatus.syncing;
+    notifyListeners();
 
-      // 2. Get last sync time
+    try {
       final prefs = await SharedPreferences.getInstance();
       final lastSyncTime = prefs.getInt('last_sync_time') ?? 0;
       final since = DateTime.fromMillisecondsSinceEpoch(lastSyncTime);
 
-      // 3. Download and merge server data
+      // 1. Upload local data (only modified data since last sync)
+      await uploadSyncData(jwtToken, since);
+
+      // 2. Download and merge server data
       await downloadSyncData(jwtToken, since);
 
-      // 4. Update sync time on success
+      // 3. Update sync time on success
       await prefs.setInt('last_sync_time', DateTime.now().millisecondsSinceEpoch);
+      _status = SyncStatus.success;
     } catch (e) {
       print('Sync failed: $e');
+      _status = SyncStatus.error;
       rethrow; // Allow UI to handle the error
+    } finally {
+      notifyListeners();
+      // Reset status to idle after a few seconds to allow for another sync
+      Future.delayed(const Duration(seconds: 3), () {
+        _status = SyncStatus.idle;
+        notifyListeners();
+      });
     }
   }
 
-  Future<void> uploadSyncData(String jwtToken) async {
-    final data = await getLocalSyncData();
+  Future<void> uploadSyncData(String jwtToken, DateTime since) async {
+    final data = await getLocalSyncData(since);
+    final json = jsonEncode(data);
 
     final response = await http.post(
       Uri.parse('$baseUrl/sync/upload'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $jwtToken',
-      },
-      body: jsonEncode(data),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $jwtToken'},
+      body: json,
     );
 
     if (response.statusCode == 200) {
@@ -73,7 +104,7 @@ class SyncService {
   Future<void> downloadSyncData(String jwtToken, DateTime since) async {
     final response = await http.get(
       Uri.parse('$baseUrl/sync/download?since=${since.millisecondsSinceEpoch}'),
-      headers: {'Authorization': 'Bearer $jwtToken'},
+      headers: {'Authorization': 'Bearer ' + jwtToken},
     );
 
     if (response.statusCode == 200) {
@@ -95,17 +126,23 @@ class SyncService {
 
     await isar.writeTxn(() async {
       for (var animeJson in animes) {
-        await isar.animeDatabases.put(AnimeDatabase().fromJson(animeJson));
+        animeDatabaseService.addAnimeDatabases2(AnimeDatabase().fromJson(animeJson));
       }
       for (var epJson in episodes) {
-        await isar.episodeDatas.put(EpisodeData().fromJson(epJson));
+        await episodeDataService.addEpisodeData(EpisodeData().fromJson(epJson));
       }
       for (var extJson in extensions) {
-        await isar.extensions.put(Extension().fromJson(extJson));
+        await extensionServices.addExtension(Extension().fromJson(extJson));
       }
       for (var histJson in history) {
-        await isar.episodeHistoryInstances.put(EpisodeHistoryInstance().fromJson(histJson));
+        await episodeHistoryService.addEpisodeHistory(EpisodeHistoryInstance().fromJson(histJson));
       }
     });
+
+    // After merging, refresh the service providers to update UI
+    await extensionServices.getExtensions();
+    await animeDatabaseService.getAnimeDatabases();
+    await episodeHistoryService.getEpisodeHistories();
+    // EpisodeDataService does not need explicit refresh due to streams.
   }
 }

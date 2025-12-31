@@ -23,9 +23,10 @@ class Extension {
   String? description;
 
   bool isMain = false;
+  DateTime? lastModified;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
+    'clientId': id, // Send client's Isar ID as 'clientId'
     'name': name,
     'iconUrl': iconUrl,
     'isSub': isSub,
@@ -38,9 +39,11 @@ class Extension {
     'author': author,
     'description': description,
     'isMain': isMain,
+    'lastModified': lastModified?.toIso8601String(),
   };
 
   Extension fromJson(Map<String, dynamic> json) {
+    id = int.parse(json['clientId'] ?? id); // Get client's Isar ID from 'clientId'
     name = json['name'];
     iconUrl = json['iconUrl'];
     isSub = json['isSub'];
@@ -53,6 +56,7 @@ class Extension {
     author = json['author'];
     description = json['description'];
     isMain = json['isMain'] ?? false;
+    lastModified = json['lastModified'] != null ? DateTime.parse(json['lastModified']) : DateTime.now();
     return this;
   }
 }

@@ -278,7 +278,7 @@ class Tools {
 
   static Future<String?> getServerJwtToken(String aniListToken) async {
     final response = await http.post(
-      Uri.parse('https://metiasync.onrender.com/authenticate'),
+      Uri.parse('https://metiasync.onrender.com/auth'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'anilist_auth_key': aniListToken}),
     );
