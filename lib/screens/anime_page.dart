@@ -70,17 +70,23 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
   //this is garbage but i got no other solution
   int progress = 0;
 
+  // Add this field to track the current extension
+  int? _currentExtensionId;
+
   @override
   void initState() {
     super.initState();
     lastExpanded = false;
 
-    runtime = context.read<ExtensionRuntimeManager>();
+    runtime = Provider.of<ExtensionRuntimeManager>(context, listen: false);
     executor = runtime.executor!;
 
-    animeDatabaseService = context.read<AnimeDatabaseService>();
+    animeDatabaseService = Provider.of<AnimeDatabaseService>(context, listen: false);
 
     _tabController = TabController(length: 1, vsync: this);
+
+    // Store the current extension ID to detect actual changes
+    _currentExtensionId = runtime.extensionServices.mainExtension?.id;
 
     //once the matched anime has been updated by correctMatchedAnime function update the UI
     animeDatabaseService.addListener(_animeDbListener);
@@ -92,14 +98,42 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
   void _animeDbListener() {
     if (!mounted) return;
-    startFindingAnimeMatchAlgorithm();
+
+    // Only react if this specific anime's data changed
+    if (animeDatabaseService.existsInDatabse(
+      widget.anime.media.id,
+      runtime.extensionServices.mainExtension?.id ?? -1,
+    )) {
+      final newMatchedAnime = animeDatabaseService
+          .getAnimeDataOf(widget.anime.media.id, runtime.extensionServices.mainExtension!.id)
+          ?.matchedAnime;
+
+      // Compare the actual data (URL is unique identifier), not object references
+      final hasChanged = newMatchedAnime?.url != matchedAnime?.url || newMatchedAnime?.name != matchedAnime?.name;
+
+      // Only update if the matched anime actually changed
+      if (hasChanged) {
+        matchedAnime = newMatchedAnime;
+        if (matchedAnime != null) {
+          isGettingEpisodes = true;
+          startGettingAnimeEpisodes();
+          setState(() {});
+        }
+      }
+    }
   }
 
   void _onExtensionChange() {
-    if (mounted) {
-      setState(() {});
+    if (!mounted) return;
+
+    final newExtensionId = runtime.extensionServices.mainExtension?.id;
+
+    // Only react if the main extension actually changed
+    if (newExtensionId != _currentExtensionId) {
+      _currentExtensionId = newExtensionId;
+      setState(() {}); // Update UI for extension icon
+      startFindingAnimeMatchAlgorithm();
     }
-    startFindingAnimeMatchAlgorithm();
   }
 
   void startGettingAnimeEpisodes() async {
@@ -638,7 +672,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 90.0),
                   child: Text(
-                    "",
+                    "lamo i am here!",
                     textAlign: TextAlign.center,
                     style: TextStyle(color: scheme.tertiary, fontSize: 30, fontWeight: FontWeight.w600),
                   ),
@@ -915,6 +949,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         ? const Icon(Icons.play_arrow_outlined, size: 20)
                         : const SizedBox(),
                     onPressed: () async {
+                      //TODO: delte this !!
                       if (runtime.extensionServices.mainExtension == null ||
                           runtime.extensionServices.currentExtensions.isEmpty) {
                         return;
@@ -948,25 +983,6 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     );
                   },
                 ),
-                // TabBar(
-                //   controller: _tabController,
-                //   tabAlignment: TabAlignment.start,
-                //   labelPadding: EdgeInsets.zero,
-                //   isScrollable: true,
-                //   indicatorColor: Colors.transparent,
-                //   dividerColor: Colors.transparent,
-                //   onTap: (value) {
-                //     setState(() {});
-                //   },
-                //   tabs: List.generate(labels.length, (i) {
-                //     return CustomTab(
-                //       controller: _tabController,
-                //       scheme: scheme,
-                //       label: labels[i],
-                //       index: i,
-                //     );
-                //   }),
-                // ),
               ],
             ),
           ),
@@ -1023,7 +1039,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.center,
-                  colors: [Provider.of<ThemeProvider>(context).scheme.background.withOpacity(0.8), Colors.transparent],
+                  colors: [
+                    Provider.of<ThemeProvider>(context, listen: false).scheme.background.withOpacity(0.8),
+                    Colors.transparent,
+                  ],
                   stops: const [0, 0.4], // control where each color stops
                 ),
               ),

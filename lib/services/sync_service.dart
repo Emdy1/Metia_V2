@@ -150,6 +150,14 @@ class SyncService extends ChangeNotifier {
   Future<void> mergeServerData(Map<String, dynamic> data) async {
     final isar = IsarServices.isar;
 
+    // Clear existing data to replace with server data
+    await isar.writeTxn(() async {
+      await isar.animeDatabases.clear();
+      await isar.episodeDatas.clear();
+      await isar.extensions.clear();
+      await isar.episodeHistoryInstances.clear();
+    });
+
     final animes = data['animes'] as List;
     final episodes = data['episodes'] as List;
     final extensions = data['extensions'] as List;
