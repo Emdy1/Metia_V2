@@ -270,6 +270,7 @@ class _SyncIndicator extends StatelessWidget {
           case SyncStatus.error:
             return const Icon(Icons.error, color: Colors.red);
           case SyncStatus.idle:
+            return SizedBox.shrink();
           default:
             return const SizedBox.shrink(); // Show nothing when idle
         }
@@ -325,7 +326,11 @@ void _switchMenuButtons(String value, BuildContext context) {
       }
       break;
     case 'clearHistory':
-      Provider.of<EpisodeHistoryService>(context, listen: false).deleteAllEpisodeHistory();
+      () async {
+        String token = Provider.of<UserProvider>(context, listen: false).JWTtoken!;
+        await Provider.of<SyncService>(context, listen: false).deleteAllFromServer(token, "history");
+        await Provider.of<EpisodeHistoryService>(context, listen: false).deleteAllEpisodeHistory();
+      }();
       break;
     case 'extensions':
       Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ExtensionsPage()));

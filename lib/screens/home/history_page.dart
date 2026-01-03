@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:metia/anilist/anime.dart';
 import 'package:metia/data/extensions/extension_runtime_manager.dart';
@@ -22,9 +20,9 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   late List<EpisodeHistoryInstance> history = [];
-  late final ExtensionRuntimeManager runtime;
-  late final AnimeDatabaseService animeDatabaseService;
-  ScriptExecutor? executor;
+  late ExtensionRuntimeManager runtime;
+  late AnimeDatabaseService animeDatabaseService;
+  late ScriptExecutor executor;
   late ColorScheme scheme;
 
   @override
@@ -181,7 +179,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    history = Provider.of<EpisodeHistoryService>(context, listen: false).currentEpisodeHistory;
+    history = Provider.of<EpisodeHistoryService>(context, listen: true).currentEpisodeHistory;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,

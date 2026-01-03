@@ -18,7 +18,6 @@ class ExtensionServices extends ChangeNotifier {
   /// Adds an extension and optionally makes it main if none exists
   Future<void> addExtension(Extension extension) async {
     await db.writeTxn(() async {
-      print("hello?");
       // If no main extension exists, make this one main
       final hasMain =
           await db.extensions.where().filter().isMainEqualTo(true).count() > 0;
@@ -52,6 +51,7 @@ class ExtensionServices extends ChangeNotifier {
 
       // Delete the extension
       await db.extensions.delete(id);
+
 
       // If it was the main extension, transfer isMain to the first available extension
       if (extensionToDelete.isMain) {

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:metia/data/extensions/extension.dart';
@@ -93,7 +95,12 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
               style: FilledButton.styleFrom(backgroundColor: colors.error, foregroundColor: colors.onError),
               onPressed: () async {
                 await extensionServices.deleteExtension(extension.id);
-
+                String token = Provider.of<UserProvider>(context, listen: false).JWTtoken!;
+                await Provider.of<SyncService>(
+                  context,
+                  listen: false,
+                ).deleteFromServer(token, "extension", extension.id.toString());
+                log("WARNING: Deleted \"${extension.name} with id:${extension.id} from the server\"");
                 // 👇 If main was deleted, reassign
                 if (isMain) {
                   final remaining = extensionServices.currentExtensions;
