@@ -52,7 +52,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (userProvider.isMetiaSyncready && alreadySyncedOnce == false) {
       final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
       if (token != null) {
-        Provider.of<SyncService>(context, listen: false).startSycning(token);
+        //Provider.of<SyncService>(context, listen: false).startSycning(token);
       }
       alreadySyncedOnce = true;
     }

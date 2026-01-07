@@ -1,18 +1,14 @@
-import 'dart:math';
+import 'dart:developer';
+import 'dart:math' hide log;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:metia/data/extensions/extension.dart';
 import 'package:metia/data/extensions/extension_runtime_manager.dart';
 import 'package:metia/data/user/user_library.dart';
-import 'package:metia/js_core/anime.dart';
 import 'package:metia/js_core/script_executor.dart';
 import 'package:metia/models/anime_database.dart';
 import 'package:metia/models/anime_database_service.dart';
-import 'package:metia/models/episode_data_service.dart';
-import 'package:metia/models/episode_database.dart';
-import 'package:metia/models/episode_history_instance.dart';
-import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/extensions_page.dart';
@@ -230,6 +226,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       //final searchResults = await currentExtension!.search(title);
 
       final searchResults = await executor!.searchAnime(title!);
+      log("INFO: Searching $title with extension ${runtime.extensionServices.mainExtension!.name}");
+                      
       if (!mounted) return;
       if (searchResults.isEmpty) {
         print(
@@ -483,6 +481,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     hasFetched = true;
                     Future.microtask(() async {
                       final value = await executor!.searchAnime(keyword);
+                      log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
                       if (!context.mounted) return;
                       setState(() {
                         animes = value;
@@ -494,6 +493,8 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   Future<void> search(String query) async {
                     setState(() => isLoading = true);
                     final value = await executor!.searchAnime(query);
+                    log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
+                      
                     if (!context.mounted) return;
                     setState(() {
                       animes = value;

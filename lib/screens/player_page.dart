@@ -226,7 +226,7 @@ class _PlayerPageState extends State<PlayerPage> {
     episodeDataService = Provider.of<EpisodeDataService>(context, listen: false);
     runtime = Provider.of<ExtensionRuntimeManager>(context, listen: false);
 
-    _setupEpisodeData();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setupEpisodeData());
 
     // Force landscape
     SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);

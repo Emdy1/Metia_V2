@@ -25,9 +25,11 @@ class ExtensionRuntimeManager extends ChangeNotifier {
   /// Initialize the executor for the current main extension
   Future<void> init() async {
     _executor ??= await ScriptExecutor.create();
-    await _loadCurrentMainExtension();
+    if (extensionServices.currentExtensions.isNotEmpty) {
+      await _loadCurrentMainExtension();
+    }
     ready.value = true;
-    
+
     notifyListeners();
   }
 
@@ -52,6 +54,7 @@ class ExtensionRuntimeManager extends ChangeNotifier {
   /// Load JS code for the current main extension
   Future<void> _loadCurrentMainExtension() async {
     final mainExt = extensionServices.mainExtension;
+    _currentMainId = mainExt!.id;
     if (mainExt == null || _executor == null) return;
 
     // Just load the new JS code

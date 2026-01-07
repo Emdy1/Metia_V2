@@ -73,7 +73,7 @@ class SyncService extends ChangeNotifier {
   Future<void> sync(String jwtToken) async {
     if (_status == SyncStatus.syncing) return;
     _status = SyncStatus.syncing;
-    notifyListeners();;
+    notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -89,18 +89,18 @@ class SyncService extends ChangeNotifier {
       // 3. Update sync time on success
       await prefs.setInt('last_sync_time', DateTime.now().millisecondsSinceEpoch);
       _status = SyncStatus.success;
-      notifyListeners();;
+      notifyListeners();
     } catch (e) {
       log('ERROR: Sync failed: $e');
       _status = SyncStatus.error;
-      notifyListeners();;
+      notifyListeners();
       rethrow; // Allow UI to handle the error
     } finally {
-      notifyListeners();;
+      notifyListeners();
       // Reset status to idle after a few seconds to allow for another sync
       Future.delayed(const Duration(seconds: 3), () {
         _status = SyncStatus.idle;
-        notifyListeners();;
+        notifyListeners();
       });
     }
   }

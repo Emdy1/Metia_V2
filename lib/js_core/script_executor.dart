@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:metia/js_core/anime.dart';
@@ -22,14 +23,8 @@ class ScriptExecutor {
 
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..addJavaScriptChannel(
-        'Flutter',
-        onMessageReceived: executor._onJsMessage,
-      )
-      ..addJavaScriptChannel(
-        'nativeFetch',
-        onMessageReceived: executor._onNativeFetch,
-      )
+      ..addJavaScriptChannel('Flutter', onMessageReceived: executor._onJsMessage)
+      ..addJavaScriptChannel('nativeFetch', onMessageReceived: executor._onNativeFetch)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) async {
@@ -69,11 +64,10 @@ class ScriptExecutor {
         'callId': callId,
         'status': res.statusCode,
         'body': res.body,
+        'headers': res.headers, // ✅ PASS HEADERS
       };
 
-      await controller.runJavaScript(
-        'window.__nativeFetchCallback(${jsonEncode(result)})',
-      );
+      await controller.runJavaScript('window.__nativeFetchCallback(${jsonEncode(result)})');
     } catch (e) {
       await controller.runJavaScript(
         'window.__nativeFetchCallback(${jsonEncode({'callId': callId, 'error': e.toString()})})',
@@ -114,9 +108,7 @@ class ScriptExecutor {
     final completer = Completer<dynamic>();
     _pendingCalls[id] = completer;
 
-    controller.runJavaScript(
-      'window.__call("$id", "$fn", ${jsonEncode(args)});',
-    );
+    controller.runJavaScript('window.__call("$id", "$fn", ${jsonEncode(args)});');
 
     return completer.future;
   }
@@ -126,18 +118,18 @@ class ScriptExecutor {
       throw Exception('JS runtime not initialized yet');
     }
     await controller.runJavaScript(jsCode);
-    
   }
 
   Future<List<MetiaAnime>> searchAnime(String keyword) async {
     final data = await call('searchAnime', [keyword]);
+
     List<MetiaAnime> animes = [];
     for (var anime in data["data"] as List) {
       final metiaAnime = MetiaAnime();
-      metiaAnime.name = anime["title"];
-      metiaAnime.length = anime["episodes"];
+      metiaAnime.name = anime["name"];
+      metiaAnime.length = anime["length"];
       metiaAnime.poster = anime["poster"];
-      metiaAnime.url = anime["session"];
+      metiaAnime.url = anime["url"];
       animes.add(metiaAnime);
     }
     return animes;
@@ -150,10 +142,10 @@ class ScriptExecutor {
     for (var episode in data["data"] as List) {
       final metiaEpisode = MetiaEpisode();
       metiaEpisode.name = episode["name"];
-      metiaEpisode.poster = episode["cover"];
-      metiaEpisode.url = episode["id"];
-      metiaEpisode.isDub = episode["dub"];
-      metiaEpisode.isSub = episode["sub"];
+      metiaEpisode.poster = episode["poster"];
+      metiaEpisode.url = episode["url"];
+      metiaEpisode.isDub = episode["isDub"];
+      metiaEpisode.isSub = episode["isSub"];
       episodes.add(metiaEpisode);
     }
     return episodes;
@@ -166,11 +158,11 @@ class ScriptExecutor {
 
     for (var streamingData in data["data"] as List) {
       final _streamingData = StreamingData();
-      _streamingData.isDub = streamingData["dub"];
-      _streamingData.isSub = streamingData["sub"];
+      _streamingData.isDub = streamingData["isDub"];
+      _streamingData.isSub = streamingData["isSub"];
       _streamingData.link = streamingData["link"];
-      _streamingData.m3u8Link = streamingData["m3u8"];
-      _streamingData.name = streamingData["provider"];
+      _streamingData.m3u8Link = streamingData["m3u8Link"];
+      _streamingData.name = streamingData["name"];
       streamingDatas.add(_streamingData);
     }
 
@@ -183,9 +175,30 @@ class ScriptExecutor {
 
   window.__pendingFetchCalls = {};
 
+  function createHeaders(rawHeaders) {
+    const map = {};
+    for (const key in rawHeaders) {
+      map[key.toLowerCase()] = rawHeaders[key];
+    }
+
+    return {
+      get(name) {
+        return map[name.toLowerCase()] ?? null;
+      },
+      has(name) {
+        return name.toLowerCase() in map;
+      },
+      entries() {
+        return Object.entries(map);
+      },
+      raw: map
+    };
+  }
+
   window.fetchViaNative = function (url, headers = {}) {
     return new Promise((resolve, reject) => {
       const callId = Math.random().toString(36).slice(2);
+
       window.__pendingFetchCalls[callId] = { resolve, reject };
 
       nativeFetch.postMessage(JSON.stringify({
@@ -207,7 +220,8 @@ class ScriptExecutor {
     } else {
       call.resolve({
         status: payload.status,
-        body: payload.body
+        body: payload.body,
+        headers: createHeaders(payload.headers || {}) // ✅
       });
     }
   };

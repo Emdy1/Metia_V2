@@ -40,11 +40,14 @@ class AnimeDatabaseService extends ChangeNotifier {
 
   Future<void> updateAnimeDatabases(MetiaAnime matchedAnime, int anilistMediaId, int extensionId) async {
     AnimeDatabase? anime = getAnimeDataOf(anilistMediaId, extensionId);
-    if (anime == null) return; // Add null check for safety
+    anime ??= AnimeDatabase()
+      ..anilistMediaId = anilistMediaId
+      ..extensionId = extensionId
+      ..matchedAnime = matchedAnime;
     anime.matchedAnime = matchedAnime;
     anime.lastModified = DateTime.now(); // Set lastModified
     await db.writeTxn(() async {
-      await db.animeDatabases.put(anime);
+      await db.animeDatabases.put(anime!);
     });
     await getAnimeDatabases();
   }
@@ -54,7 +57,7 @@ class AnimeDatabaseService extends ChangeNotifier {
         .where(
           (animeDatabase) => animeDatabase.anilistMediaId == anilistMediaId && animeDatabase.extensionId == extensionId,
         )
-        .first;
+        .firstOrNull;
   }
 
   bool existsInDatabse(int anilistMediaId, int extensionId) {
