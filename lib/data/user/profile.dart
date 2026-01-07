@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:metia/anilist/anime.dart';
 import 'package:metia/data/user/user_library.dart';
 
-class Profile extends ChangeNotifier{
+class Profile extends ChangeNotifier {
   String name;
   String avatarLink;
   String bannerImage;
@@ -15,6 +15,19 @@ class Profile extends ChangeNotifier{
   ActivityPage userActivityPage;
   List<List<Media>> explorerContent;
 
+  //this return the MediaListEntry from the user's library if it finds it there if not then returns null
+  //userLibrary has a library var which has a List<MediaListGroup> and each media list groupe has entries var which has a list of MediaListEntry and each media list entry has a Media var which has an id in which we can deeterming this is the id of the Media we provided or not
+  MediaListEntry? getMediaFromLibrary(int mediaId) {
+    for (final group in userLibrary.library) {
+      for (final entry in group.entries) {
+        if (entry.media.id == mediaId) {
+          return entry;
+        }
+      }
+    }
+    return null;
+  }
+
   Profile({
     required this.name,
     required this.avatarLink,
@@ -24,7 +37,7 @@ class Profile extends ChangeNotifier{
     required this.statistics,
     required this.userActivityPage,
     required this.userLists,
-    required this .explorerContent,
+    required this.explorerContent,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -80,9 +93,7 @@ class ActivityPage {
   factory ActivityPage.fromJson(Map<String, dynamic> json) {
     return ActivityPage(
       pageInfo: PageInfo.fromJson(json['pageInfo']),
-      activities: (json['activities'] as List<dynamic>)
-          .map((e) => UserActivity.fromJson(e))
-          .toList(),
+      activities: (json['activities'] as List<dynamic>).map((e) => UserActivity.fromJson(e)).toList(),
     );
   }
 }

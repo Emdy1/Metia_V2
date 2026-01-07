@@ -7,8 +7,9 @@ import 'package:metia/models/anime_database.dart';
 import 'package:metia/models/anime_database_service.dart';
 import 'package:metia/models/episode_history_instance.dart';
 import 'package:metia/models/episode_history_service.dart';
+import 'package:metia/models/login_provider.dart';
 import 'package:metia/screens/player_page.dart';
-import 'package:metia/widgets/custom_widgets.dart'; 
+import 'package:metia/widgets/custom_widgets.dart';
 import 'package:metia/models/logger.dart';
 import 'package:provider/provider.dart';
 
@@ -196,13 +197,23 @@ class _HistoryPageState extends State<HistoryPage> {
           separatorBuilder: (context, index) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final episodeHistoryInstance = history[index];
+            bool seen = false;
+            MediaListEntry? entry = Provider.of<UserProvider>(
+              context,
+              listen: false,
+            ).user.getMediaFromLibrary(episodeHistoryInstance.anilistMediaId!);
+            if (entry != null) {
+              if (entry.progress! > episodeHistoryInstance.episodeNumber!) {
+                seen = true;
+              }
+            }
             return EpisodeItem(
               key: ValueKey('episode_$index'),
               index: episodeHistoryInstance.episodeNumber!, // Episode Index, starts from 0
               animeId: episodeHistoryInstance.anilistMediaId!, // Anilist Media Id
               extensionId: episodeHistoryInstance.extensionId!, // Extension Id
               current: false, // is current episode, should be false by default in this scenario
-              seen: episodeHistoryInstance.seen!, // has been seen, should be false by default in this scenario
+              seen: seen, // has been seen, should be false by default in this scenario
               episode: episodeHistoryInstance.episode!, // MetiaEpisode object
               animeTitle: episodeHistoryInstance.title!, // Anime Title
               onTap: () {
