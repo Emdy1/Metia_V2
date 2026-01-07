@@ -36,15 +36,13 @@ void main() async {
   final animeHistoryService = EpisodeHistoryService();
   await animeHistoryService.getEpisodeHistories();
 
-  //init sync service
-
   //init ScriptExecutor early
-
   final extensionServices = ExtensionServices();
   await extensionServices.getExtensions();
   final manager = ExtensionRuntimeManager(extensionServices);
   await manager.init(); // executor ready here
 
+  //init sync service
   final syncService = SyncService(
     animeDatabaseService: animeDatabaseService,
     episodeHistoryService: animeHistoryService,
@@ -67,8 +65,6 @@ void main() async {
       ],
       builder: (context, _) {
         final themeProvider = context.watch<ThemeProvider>();
-
-       
 
         return MaterialApp(
           //showPerformanceOverlay: true,

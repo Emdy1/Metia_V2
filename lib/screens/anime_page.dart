@@ -228,7 +228,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
 
       final searchResults = await executor!.searchAnime(title!);
       Logger.log("INFO: Searching $title with extension ${runtime.extensionServices.mainExtension!.name}");
-                      
+
       if (!mounted) return;
       if (searchResults.isEmpty) {
         Logger.log(
@@ -335,6 +335,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       context: context,
       isScrollControlled: true,
       builder: (context) {
+        isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
         return SizedBox(
           height: isLandscape ? MediaQuery.of(context).size.height * 1 : MediaQuery.of(context).size.height * 0.563,
           child: StatefulBuilder(
@@ -386,6 +387,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                     children: [
                                       Text(
                                         "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                           //color: MyColors.appbarTextColor,
                                           fontWeight: FontWeight.w600,
@@ -467,7 +469,6 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     showModalBottomSheet(
       backgroundColor: Theme.of(context).colorScheme.surface,
       context: context,
-      //isScrollControlled: isLandscape ? true : false,
       isScrollControlled: true,
       builder: (context) {
         isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
@@ -482,7 +483,9 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     hasFetched = true;
                     Future.microtask(() async {
                       final value = await executor!.searchAnime(keyword);
-                      Logger.log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
+                      Logger.log(
+                        "INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}",
+                      );
                       if (!context.mounted) return;
                       setState(() {
                         animes = value;
@@ -494,8 +497,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   Future<void> search(String query) async {
                     setState(() => isLoading = true);
                     final value = await executor!.searchAnime(query);
-                    Logger.log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
-                      
+                    Logger.log(
+                      "INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}",
+                    );
+
                     if (!context.mounted) return;
                     setState(() {
                       animes = value;

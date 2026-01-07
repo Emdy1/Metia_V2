@@ -86,6 +86,8 @@ class _PlayerPageState extends State<PlayerPage> {
   late EpisodeDataService episodeDataService;
   late ExtensionRuntimeManager runtime;
 
+  bool isGoingToAnotherEpisode = false;
+
   Duration parseDuration(String timeString) {
     final parts = timeString.split(':').map(int.parse).toList();
 
@@ -140,6 +142,8 @@ class _PlayerPageState extends State<PlayerPage> {
       );
       Provider.of<UserProvider>(context, listen: false).reloadUserData();
 
+      isGoingToAnotherEpisode = true;
+
       Navigator.pop(context);
 
       Navigator.push(
@@ -177,6 +181,8 @@ class _PlayerPageState extends State<PlayerPage> {
         accessToken: accessToken,
       );
       Provider.of<UserProvider>(context, listen: false).reloadUserData();
+
+      isGoingToAnotherEpisode = true;
 
       Navigator.pop(context);
 
@@ -351,7 +357,11 @@ class _PlayerPageState extends State<PlayerPage> {
     await player.open(
       Media(
         m3u8Link,
-        httpHeaders: {"referer": widget.animeStreamingData.link, "user-agents": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"},
+        httpHeaders: {
+          "referer": widget.animeStreamingData.link,
+          "user-agents":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        },
       ),
       play: true,
     );
@@ -410,13 +420,15 @@ class _PlayerPageState extends State<PlayerPage> {
 
     _seekDisplayTimer?.cancel();
     // Restore your app's normal orientations when leaving this page
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    if (!isGoingToAnotherEpisode) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
 
     player.dispose();
 
