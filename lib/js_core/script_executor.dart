@@ -124,13 +124,10 @@ class ScriptExecutor {
     final data = await call('searchAnime', [keyword]);
 
     List<MetiaAnime> animes = [];
-    for (var anime in data["data"] as List) {
-      final metiaAnime = MetiaAnime();
-      metiaAnime.name = anime["name"];
-      metiaAnime.length = anime["length"];
-      metiaAnime.poster = anime["poster"];
-      metiaAnime.url = anime["url"];
-      animes.add(metiaAnime);
+    try {
+      animes = (data["data"] as List).map((e) => MetiaAnime().fromJson(e)).toList();
+    } catch (e) {
+      Logger.log(e.toString());
     }
     return animes;
   }
@@ -139,14 +136,10 @@ class ScriptExecutor {
     final data = await call('getAnimeEpisodeList', [url]);
 
     List<MetiaEpisode> episodes = [];
-    for (var episode in data["data"] as List) {
-      final metiaEpisode = MetiaEpisode();
-      metiaEpisode.name = episode["name"];
-      metiaEpisode.poster = episode["poster"];
-      metiaEpisode.url = episode["url"];
-      metiaEpisode.isDub = episode["isDub"];
-      metiaEpisode.isSub = episode["isSub"];
-      episodes.add(metiaEpisode);
+    try {
+      episodes = (data["data"] as List).map((e) => MetiaEpisode().fromJson(e)).toList();
+    } catch (e) {
+      Logger.log(e.toString());
     }
     return episodes;
   }
@@ -156,16 +149,11 @@ class ScriptExecutor {
 
     List<StreamingData> streamingDatas = [];
 
-    for (var streamingData in data["data"] as List) {
-      final _streamingData = StreamingData();
-      _streamingData.isDub = streamingData["isDub"];
-      _streamingData.isSub = streamingData["isSub"];
-      _streamingData.link = streamingData["link"];
-      _streamingData.m3u8Link = streamingData["m3u8Link"];
-      _streamingData.name = streamingData["name"];
-      streamingDatas.add(_streamingData);
+    try {
+      streamingDatas = (data["data"] as List).map((e) => StreamingData().fromJson(e)).toList();
+    } on Exception catch (e) {
+      Logger.log(e.toString());
     }
-
     return streamingDatas;
   }
 

@@ -208,7 +208,7 @@ class UserProvider extends ChangeNotifier {
       _user.userActivityPage.activities.addAll(newPage.activities);
       notifyListeners();
     } catch (e) {
-      debugPrint(e.toString());
+      Logger.log(e.toString());
     } finally {
       _isLoadingMoreActivities = false;
     }
@@ -277,7 +277,7 @@ class UserProvider extends ChangeNotifier {
 
     if (viewerData['errors'] != null) {
       // handle error, e.g. throw or return early
-      debugPrint('Error fetching viewer: ${viewerData['errors']}');
+      Logger.log('Error fetching viewer: ${viewerData['errors']}');
       return;
     }
 
@@ -412,7 +412,7 @@ class UserProvider extends ChangeNotifier {
     final Map<String, dynamic> mediaListData = jsonDecode(mediaListResponse.body);
 
     if (mediaListData['errors'] != null) {
-      debugPrint('Error fetching media list: ${mediaListData['errors']}');
+      Logger.log('Error fetching media list: ${mediaListData['errors']}');
       return;
     }
 
@@ -581,7 +581,7 @@ class UserProvider extends ChangeNotifier {
 
     if (response.statusCode == 200) {
     } else {
-      print('Failed to add custom list: ${response.body}');
+      Logger.log('Failed to add custom list: ${response.body}');
     }
   }
 
@@ -620,7 +620,7 @@ class UserProvider extends ChangeNotifier {
 
     if (response.statusCode == 200) {
     } else {
-      print('Failed to add custom list: ${response.body}');
+      Logger.log('Failed to add custom list: ${response.body}');
     }
   }
 

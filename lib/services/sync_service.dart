@@ -14,6 +14,7 @@ import '../models/episode_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:metia/data/extensions/extension_services.dart';
+import 'package:metia/models/logger.dart';
 import 'package:metia/models/anime_database_service.dart';
 import 'package:metia/models/episode_history_service.dart';
 
@@ -59,7 +60,7 @@ class SyncService extends ChangeNotifier {
   void startSycning(String jwtToken) {
     _timer = Timer.periodic(const Duration(seconds: 10), (_) async {
       sync(jwtToken);
-      log("INFO: Synced the device with the data from the server");
+      Logger.log("INFO: Synced the device with the data from the server");
     });
   }
 
@@ -89,9 +90,10 @@ class SyncService extends ChangeNotifier {
       // 3. Update sync time on success
       await prefs.setInt('last_sync_time', DateTime.now().millisecondsSinceEpoch);
       _status = SyncStatus.success;
+      Logger.log("INFO: successful sync!");
       notifyListeners();
     } catch (e) {
-      log('ERROR: Sync failed: $e');
+      Logger.log('ERROR: Sync failed: $e');
       _status = SyncStatus.error;
       notifyListeners();
       rethrow; // Allow UI to handle the error
@@ -123,7 +125,7 @@ class SyncService extends ChangeNotifier {
   Future<void> downloadSyncData(String jwtToken, DateTime since) async {
     // Temporarily force 'since' to epoch for debugging initial sync issues
     // final debugSince = DateTime.fromMillisecondsSinceEpoch(0);
-    // print('DEBUG: Forcing download since epoch: $debugSince');
+    // Logger.log('DEBUG: Forcing download since epoch: $debugSince');
 
     final response = await http.get(
       Uri.parse('$baseUrl/sync/download'), // Use debugSince here

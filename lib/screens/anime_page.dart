@@ -17,6 +17,7 @@ import 'package:metia/services/sync_service.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:metia/widgets/custom_tab.dart';
 import 'package:metia/widgets/custom_widgets.dart';
+import 'package:metia/models/logger.dart';
 import 'package:provider/provider.dart';
 
 class AnimePage extends StatefulWidget {
@@ -138,7 +139,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     if (executor == null) return;
     episodeList = await executor!.getAnimeEpisodeList(matchedAnime!.url);
 
-    print("found ${episodeList.length} episodes for ${matchedAnime!.name} ");
+    Logger.log("found ${episodeList.length} episodes for ${matchedAnime!.name} ");
 
     //here is where we get the episode list
 
@@ -193,7 +194,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       startGettingAnimeEpisodes();
       //await prefs.setString(key, jsonEncode(bestMatch));
 
-      print("INFO: found this title \"${matchedAnime!.name}\" to be the best match ");
+      Logger.log("INFO: found this title \"${matchedAnime!.name}\" to be the best match ");
 
       setState(() {
         //foundTitle = clossestAnime == null ? " " : clossestAnime["title"];
@@ -206,7 +207,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     isGettingEpisodes = false;
 
     if (runtime.extensionServices.mainExtension == null) {
-      print("ERROR: there is no main extension");
+      Logger.log("ERROR: there is no main extension");
       return;
     }
 
@@ -218,7 +219,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     }
 
     if (title == "") {
-      print("ERROR: title is empty");
+      Logger.log("ERROR: title is empty");
       return;
     }
 
@@ -226,11 +227,11 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
       //final searchResults = await currentExtension!.search(title);
 
       final searchResults = await executor!.searchAnime(title!);
-      log("INFO: Searching $title with extension ${runtime.extensionServices.mainExtension!.name}");
+      Logger.log("INFO: Searching $title with extension ${runtime.extensionServices.mainExtension!.name}");
                       
       if (!mounted) return;
       if (searchResults.isEmpty) {
-        print(
+        Logger.log(
           "ERROR: found 0 entries from searching \"${title}\" with extension \"${runtime.extensionServices.mainExtension!.name}\"",
         );
         return;
@@ -298,7 +299,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
         matchedAnime = searchResults[0];
       }
     } catch (e) {
-      print("Error finding matching anime: $e");
+      Logger.log("Error finding matching anime: $e");
     }
 
     await animeDatabaseService.addAnimeDatabases(
@@ -317,7 +318,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     startGettingAnimeEpisodes();
     //await prefs.setString(key, jsonEncode(bestMatch));
 
-    print("INFO: found this title \"${matchedAnime!.name}\" to be the best match ");
+    Logger.log("INFO: found this title \"${matchedAnime!.name}\" to be the best match ");
 
     if (mounted) {
       setState(() {
@@ -396,7 +397,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                           //download button
                                           IconButton(
                                             onPressed: () {
-                                              debugPrint("download started!");
+                                              Logger.log("download started!");
                                             },
                                             icon: const Icon(
                                               Icons.download,
@@ -481,7 +482,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                     hasFetched = true;
                     Future.microtask(() async {
                       final value = await executor!.searchAnime(keyword);
-                      log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
+                      Logger.log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
                       if (!context.mounted) return;
                       setState(() {
                         animes = value;
@@ -493,7 +494,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                   Future<void> search(String query) async {
                     setState(() => isLoading = true);
                     final value = await executor!.searchAnime(query);
-                    log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
+                    Logger.log("INFO: Searching $keyword with extension ${runtime.extensionServices.mainExtension!.name}");
                       
                     if (!context.mounted) return;
                     setState(() {

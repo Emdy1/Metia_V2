@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:metia/data/extensions/extension.dart';
+import 'package:metia/models/logger.dart';
 
 class ExtensionParser {
   static Future<Extension> parse(String extensionLink) async {
@@ -39,7 +40,7 @@ class ExtensionParser {
 
       return extension;
     } catch (e, stack) {
-      debugPrint('Error parsing extension: $e');
+      Logger.log('Error parsing extension: $e');
       debugPrintStack(stackTrace: stack);
 
       // 🔥 IMPORTANT PART

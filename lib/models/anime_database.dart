@@ -56,6 +56,14 @@ class MetiaEpisode {
   late bool isSub;
 
   Map<String, dynamic> toJson() => {'poster': poster, 'name': name, 'url': url, 'isDub': isDub, 'isSub': isSub};
+  MetiaEpisode fromJson(Map<String, dynamic> json) {
+    name = json["name"];
+    poster = json["poster"];
+    url = json["url"];
+    isDub = json["isDub"];
+    isSub = json["isSub"];
+    return this;
+  }
 }
 
 @embedded
@@ -65,4 +73,13 @@ class StreamingData {
   late bool isDub;
   late String name;
   late String m3u8Link;
+
+  StreamingData fromJson(Map<String, dynamic> json) {
+    link = json["link"];
+    isSub = json["isSub"];
+    isDub = json["isDub"];
+    name = json["name"];
+    m3u8Link = json["m3u8Link"];
+    return this;
+  }
 }

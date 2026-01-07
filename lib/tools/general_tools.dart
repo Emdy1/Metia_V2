@@ -7,6 +7,7 @@ import 'package:metia/data/user/user_library.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:metia/models/logger.dart';
 
 class Tools {
   static Future<String> fetchAniListAccessToken(String authorizationCode) async {
@@ -267,12 +268,12 @@ class Tools {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['errors'] != null) {
-        print('AniList API Error: ${data['errors']}');
+        Logger.log('AniList API Error: ${data['errors']}');
       } else {
-        print('Tracking updated: ${data['data']['SaveMediaListEntry']}');
+        Logger.log('Tracking updated: ${data['data']['SaveMediaListEntry']}');
       }
     } else {
-      print('HTTP Error ${response.statusCode}: ${response.body}');
+      Logger.log('HTTP Error ${response.statusCode}: ${response.body}');
     }
   }
 
@@ -287,7 +288,7 @@ class Tools {
       final json = jsonDecode(response.body);
       return json['token']; // ✅ Server JWT token
     } else {
-      print('Failed to get JWT: ${response.body}');
+      Logger.log('Failed to get JWT: ${response.body}');
       return null;
     }
   }

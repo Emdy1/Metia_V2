@@ -8,6 +8,7 @@ import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/services/sync_service.dart';
 import 'package:provider/provider.dart';
+import 'package:metia/models/logger.dart';
 
 class ExtensionsPage extends StatefulWidget {
   const ExtensionsPage({super.key});
@@ -100,7 +101,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                   context,
                   listen: false,
                 ).deleteFromServer(token, "extension", extension.id.toString());
-                log("WARNING: Deleted \"${extension.name} with id:${extension.id} from the server\"");
+                Logger.log("WARNING: Deleted \"${extension.name} with id:${extension.id} from the server\"");
                 // 👇 If main was deleted, reassign
                 if (isMain) {
                   final remaining = extensionServices.currentExtensions;

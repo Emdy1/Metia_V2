@@ -8,7 +8,8 @@ import 'package:metia/models/anime_database_service.dart';
 import 'package:metia/models/episode_history_instance.dart';
 import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/screens/player_page.dart';
-import 'package:metia/widgets/custom_widgets.dart';
+import 'package:metia/widgets/custom_widgets.dart'; 
+import 'package:metia/models/logger.dart';
 import 'package:provider/provider.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -111,7 +112,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                           //download button
                                           IconButton(
                                             onPressed: () {
-                                              debugPrint("download started!");
+                                              Logger.log("download started!");
                                             },
                                             icon: const Icon(
                                               Icons.download,

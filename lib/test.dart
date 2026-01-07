@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_js/flutter_js.dart';
 import 'package:metia/data/extensions/extension.dart';
+import 'package:metia/models/logger.dart';
 import 'package:metia/js_core/extension_parser.dart';
 import 'package:metia/js_core/script_executor.dart';
 
@@ -31,11 +32,11 @@ class Test1State extends State<Test1> {
     );
 
     await executor.loadExtension(extension.jsCode ?? "");
-    debugPrint("Extension Loaded");
+    Logger.log("Extension Loaded");
 
     String keyword = "hunter x hunter";
     final res = await executor.searchAnime(keyword);
-    debugPrint(
+    Logger.log(
       "seccusfully got anime search of $keyword with ${res.length} entries",
     );
     final videoList = await executor.getAnimeEpisodeList(res[0].url);

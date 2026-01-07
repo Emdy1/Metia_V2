@@ -1,3 +1,5 @@
+import 'dart:developer' as loog;
+
 import 'package:flutter/widgets.dart';
 import 'package:isar/isar.dart';
 import 'package:metia/data/user/user_data.dart';
@@ -13,7 +15,7 @@ class Logger {
     await UserData.isar.writeTxn(() async {
       await UserData.isar.logEntrys.put(entry);
     });
-    debugPrint(message);
+    loog.log(message);
   }
 
   static Future<List<LogEntry>> getLogs({int limit = 100}) async {

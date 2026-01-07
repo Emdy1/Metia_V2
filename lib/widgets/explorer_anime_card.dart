@@ -7,6 +7,7 @@ import 'package:metia/data/user/profile.dart';
 import 'package:metia/data/user/user_library.dart';
 import 'package:metia/models/login_provider.dart';
 import 'package:metia/screens/anime_page.dart';
+import 'package:metia/models/logger.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:metia/widgets/library_anime_card.dart';
 import 'package:provider/provider.dart';
@@ -121,7 +122,7 @@ class _ExplorerAnimeCardState extends State<ExplorerAnimeCard> {
                                         widget.onLibraryChanged!();
                                       }else{
                                         widget.onLibraryChanged!();
-                                        log("WARNING: either the user dismessed the transfer or the api refused the transfer!");
+                                        Logger.log("WARNING: either the user dismessed the transfer or the api refused the transfer!");
                                       }
                                     },
                                     child: ClipRRect(

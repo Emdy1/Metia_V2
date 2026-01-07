@@ -17,6 +17,7 @@ import 'package:metia/models/episode_database.dart';
 import 'package:metia/models/episode_history_instance.dart';
 import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/login_provider.dart';
+import 'package:metia/models/logger.dart';
 import 'package:metia/services/sync_service.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:provider/provider.dart';
@@ -123,7 +124,7 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   void nextEpisode() async {
-    log("Loading Next Episode");
+    Logger.log("Loading Next Episode");
     int epIndex = widget.episodeList.indexWhere(
       (element) =>
           element == widget.episodeData, // compare by ID or unique property    //TODO: widget.episodeList[epIndex].url
@@ -161,7 +162,7 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   void pastEpisode() {
-    log("Loading Past Episode");
+    Logger.log("Loading Past Episode");
     int epIndex = widget.episodeList.indexWhere(
       (element) =>
           element == widget.episodeData, // compare by ID or unique property    //TODO: widget.episodeList[epIndex].url

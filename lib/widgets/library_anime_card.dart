@@ -10,6 +10,7 @@ import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/anime_page.dart';
 import 'package:metia/tools/general_tools.dart';
 import 'package:provider/provider.dart';
+import 'package:metia/models/logger.dart';
 
 class CustomPageRoute extends PageRouteBuilder {
   final WidgetBuilder builder;
@@ -76,7 +77,7 @@ class _AnimeCardState extends State<AnimeCard> {
                       CupertinoContextMenuAction(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          debugPrint("Watching $title");
+                          Logger.log("Watching $title");
                           Provider.of<UserProvider>(context, listen: false).reloadUserData();
                         },
                         trailingIcon: CupertinoIcons.play,
@@ -88,7 +89,7 @@ class _AnimeCardState extends State<AnimeCard> {
                         child: const Text("Copy Name"),
                         onPressed: () {
                           Navigator.of(context).pop();
-                          debugPrint("Copied \"$title\" to clipboard");
+                          Logger.log("Copied \"$title\" to clipboard");
                         },
                       ),
                       // Change to another List
