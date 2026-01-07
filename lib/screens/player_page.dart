@@ -346,10 +346,12 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> initPlayer(bool useDefaultLink, String m3u8, EpisodeData epData) async {
+    String m3u8Link = useDefaultLink ? widget.animeStreamingData.m3u8Link : m3u8;
+    Logger.log("playing with: ${m3u8Link}");
     await player.open(
       Media(
-        useDefaultLink ? widget.animeStreamingData.m3u8Link : m3u8,
-        httpHeaders: {"referer": widget.animeStreamingData.link},
+        m3u8Link,
+        httpHeaders: {"referer": widget.animeStreamingData.link, "user-agents": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"},
       ),
       play: true,
     );

@@ -41,7 +41,7 @@ class _LoggingPageState extends State<LoggingPage> {
               final log = logs[index];
               return ListTile(
                 title: Text(log.message),
-                subtitle: Text(
+                subtitle: SelectableText(
                   'Level: ${log.level}\nTime: ${log.timestamp}\nDetails: ${log.details ?? "Empty"}',
                 ),
               );
