@@ -182,6 +182,8 @@ class UserProvider extends ChangeNotifier {
 
     final variables = {"id": userId, "type": "ANIME_LIST", "page": page, "perPage": perPage};
 
+    String authKey = await _getAuthKey();
+
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $authKey'},

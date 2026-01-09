@@ -383,15 +383,18 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                   padding: const EdgeInsets.only(right: 12, left: 12),
 
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          //color: MyColors.appbarTextColor,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16.5,
+                                      Expanded(
+                                        child: Text(
+                                          "${streamingData.name.toUpperCase()} - ${streamingData.isSub ? "Sub" : "Dub"}",
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            //color: MyColors.appbarTextColor,
+                                            fontWeight: FontWeight.w600,
+                                            // fontSize: 16.5,
+                                            fontSize: 14,
+                                          ),
                                         ),
                                       ),
                                       Row(
