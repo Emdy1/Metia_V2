@@ -110,11 +110,20 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Collect Commit Messages
+        shell: bash
         run: |
-          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 2>/dev/null)..HEAD > commits.txt || git log --pretty=format:"- %s" > commits.txt
-          echo "COMMITS<<EOF" >> $GITHUB_ENV
-          cat commits.txt >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          set -e
+      
+          # Get commits since last tag, or all commits if no tag exists
+          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+            git log --pretty=format:"- %s" "$(git describe --tags --abbrev=0)..HEAD" > commits.txt
+          else
+            git log --pretty=format:"- %s" > commits.txt
+          fi
+      
+          echo "COMMITS<<EOF" >> "$GITHUB_ENV"
+          cat commits.txt >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
 
       - uses: actions/download-artifact@v4
         with:
