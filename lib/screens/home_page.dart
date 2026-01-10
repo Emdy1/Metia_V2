@@ -17,6 +17,7 @@ import 'package:metia/screens/home/profile_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:metia/screens/logging_page.dart';
 import 'package:metia/services/sync_service.dart';
+import 'package:metia/services/update_service.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -44,6 +45,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     // Listen to login state changes
     Provider.of<UserProvider>(context, listen: false).addListener(_onLoginStateChanged);
     initDeepLinks();
+
+    // Check for updates after the first frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService().checkForUpdates(context);
+    });
   }
 
   void _onLoginStateChanged() {
