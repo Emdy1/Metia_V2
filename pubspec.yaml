@@ -1,7 +1,7 @@
 name: metia
 description: "A new Flutter project."
 
-version: 1.0.71
+version: 1.0.72
 
 environment:
   sdk: ^3.8.1
