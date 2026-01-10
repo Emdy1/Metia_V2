@@ -2,7 +2,7 @@ name: metia-build-exp
 
 on:
   workflow_run:
-    workflows: ["Bump Version on Commit"] # <-- Use the exact name of your version bump workflow
+    workflows: ["Bump Version on Commit"]
     types:
       - completed
 
@@ -12,8 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      # Setup Flutter
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -21,7 +22,6 @@ jobs:
 
       - run: flutter pub get
 
-      # Setup Java for Android
       - uses: actions/setup-java@v2
         with:
           distribution: 'adopt'
@@ -29,8 +29,7 @@ jobs:
 
       - run: flutter build apk --release --split-per-abi
 
-      - name: Upload Android APK as Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: build/app/outputs/apk/release/
@@ -40,14 +39,9 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: List available simulator runtimes
-        run: xcrun simctl list runtimes
-
-      - name: Show available Xcode versions
-        run: ls /Applications | grep Xcode
-      
-      # Setup Flutter
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -57,7 +51,7 @@ jobs:
 
       - run: pod repo update
         working-directory: ios
-          
+
       - run: flutter build ios --release --no-codesign
 
       - run: mkdir Payload
@@ -66,83 +60,63 @@ jobs:
       - run: mv Runner.app Payload
         working-directory: build/ios/iphoneos
 
-      - name: Zip iOS Output
-        run: zip -qq -r -9 metia.ipa Payload
+      - run: zip -qq -r -9 metia.ipa Payload
         working-directory: build/ios/iphoneos
 
-      - name: Upload Unsigned iOS IPA as Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: ios-ipa-unsigned
           path: build/ios/iphoneos/metia.ipa
 
-      # --- Begin: Upload to ipasign.cc and poll for result ---
+      # --- Signing block unchanged ---
       - name: Sign IPA with ipasign.cc
-        id: sign_ipa
         working-directory: build/ios/iphoneos
         run: |
-          # Download the .mobileprovision file
-          curl -L -o "profile.mobileprovision" "https://raw.githubusercontent.com/moaadhzair/TEMP-DOCS/refs/heads/main/China%20CITIC%20Bank%20Corporation%20Limited.mobileprovision"
-          
-          # Download the .p12 file
-          curl -L -o "cert.p12" "https://raw.githubusercontent.com/moaadhzair/TEMP-DOCS/refs/heads/main/China%20CITIC%20Bank%20Corporation%20Limited.p12"
-          
-          # Check if metia.ipa exists in the current directory
-          if [ ! -f "metia.ipa" ]; then
-            echo "metia.ipa not found in the current directory. Exiting."
-            exit 1
-          fi
-          
+          curl -L -o profile.mobileprovision "https://raw.githubusercontent.com/moaadhzair/TEMP-DOCS/refs/heads/main/China%20CITIC%20Bank%20Corporation%20Limited.mobileprovision"
+          curl -L -o cert.p12 "https://raw.githubusercontent.com/moaadhzair/TEMP-DOCS/refs/heads/main/China%20CITIC%20Bank%20Corporation%20Limited.p12"
+
           response=$(curl -s -X POST "https://ipa.ipasign.cc/sign" \
-              -F "ipa=@metia.ipa" \
-              -F "p12=@cert.p12" \
-              -F "mp=@profile.mobileprovision" \
-              -F "password=AppleP12.com")
-          
-          echo "ipasign response: $response"
+            -F "ipa=@metia.ipa" \
+            -F "p12=@cert.p12" \
+            -F "mp=@profile.mobileprovision" \
+            -F "password=AppleP12.com")
+
           task_id=$(echo "$response" | sed -n 's/.*"task_id":"\([^"]*\)".*/\1/p')
-          echo "task_id=$task_id"
-          
-          # Poll for status
+
           for i in {1..60}; do
-            status_response=$(curl -s "https://ipa.ipasign.cc/status/$task_id")
-            status=$(echo "$status_response" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-            echo "Status: $status"
-            if [ "$status" = "SUCCESS" ]; then
-              break
-            elif [ "$status" = "FAILURE" ]; then
-              echo "Signing failed"
-              exit 1
-            fi
+            status=$(curl -s "https://ipa.ipasign.cc/status/$task_id" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
+            [ "$status" = "SUCCESS" ] && break
             sleep 10
           done
-          
-          # Download signed IPA
-          curl -L -o metia.signed.ipa "https://ipa.ipasign.cc/download_ipa/$task_id"
-      # --- End: Upload to ipasign.cc and poll for result ---
 
-      - name: Upload Signed iOS IPA as Artifact
-        uses: actions/upload-artifact@v4
+          curl -L -o metia.signed.ipa "https://ipa.ipasign.cc/download_ipa/$task_id"
+
+      - uses: actions/upload-artifact@v4
         with:
           name: ios-ipa-signed
           path: build/ios/iphoneos/metia.signed.ipa
 
   release-ios:
-    name: Create iOS Release
     runs-on: ubuntu-latest
-    needs: [build-ios]
-    if: success()
+    needs: build-ios
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Get Version
-        id: get_version
         run: |
-          VERSION=$(cat pubspec.yaml | grep "version:" | cut -d'+' -f1 | cut -d' ' -f2)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION=$(grep "version:" pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Download iOS IPA
-        uses: actions/download-artifact@v4
+      - name: Collect Commit Messages
+        run: |
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 2>/dev/null)..HEAD > commits.txt || git log --pretty=format:"- %s" > commits.txt
+          echo "COMMITS<<EOF" >> $GITHUB_ENV
+          cat commits.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - uses: actions/download-artifact@v4
         with:
           name: ios-ipa-signed
           path: artifacts/ios/
@@ -150,40 +124,32 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          name: Release v${{ steps.get_version.outputs.version }}
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
           body: |
-            🚀 New Release
-            
-            ### Changes
-            - iOS build available
-            - Version: ${{ steps.get_version.outputs.version }}
-            
-            ### Downloads
-            - iOS IPA available in the release assets
-          files: |
-            artifacts/ios/*.ipa
-          draft: false
-          prerelease: false
+            🚀 New Release v${{ env.VERSION }}
+
+            ## Changes
+            ${{ env.COMMITS }}
+
+            ## Downloads
+            - iOS IPA attached
+          files: artifacts/ios/*.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-android:
-    name: Update Release with Android
     runs-on: ubuntu-latest
     needs: [build-android, release-ios]
-    if: success()
     steps:
       - uses: actions/checkout@v3
 
       - name: Get Version
-        id: get_version
         run: |
-          VERSION=$(cat pubspec.yaml | grep "version:" | cut -d'+' -f1 | cut -d' ' -f2)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION=$(grep "version:" pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Download Android APK
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: android-apk
           path: artifacts/android/
@@ -191,74 +157,11 @@ jobs:
       - name: Update Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          name: Release v${{ steps.get_version.outputs.version }}
+          tag_name: v${{ env.VERSION }}
+          append_body: true
           body: |
-            🚀 New Release
-            
-            ### Changes
-            - iOS and Android builds available
-            - Version: ${{ steps.get_version.outputs.version }}
-            
-            ### Downloads
-            - iOS IPA available in the release assets
-            - Android APK available in the release assets
-          files: |
-            artifacts/android/*.apk
-          draft: false
-          prerelease: false
+
+            - Android APK attached
+          files: artifacts/android/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  update-json:
-    name: Update JSON File
-    runs-on: ubuntu-latest
-    needs: [release-android]
-    if: success()
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get Version
-        id: get_version
-        run: |
-          VERSION=$(cat pubspec.yaml | grep "version:" | cut -d'+' -f1 | cut -d' ' -f2)
-          echo "version=$VERSION" >> $GITHUB_ENV
-
-      - name: Download Latest IPA from Release
-        run: |
-          curl -L -o metia.ipa "https://github.com/emdy1/Metia_V2/releases/download/v${{ env.version }}/metia.signed.ipa"
-
-      - name: Get IPA File Size
-        id: get_size
-        run: |
-          FILE_SIZE=$(stat -c%s "metia.ipa")
-          echo "size=$FILE_SIZE" >> $GITHUB_ENV
-
-      - name: Update app.json
-        run: |
-          node -e '
-          const fs = require("fs");
-          const path = "SyncingStuff/app.json";
-          let data = JSON.parse(fs.readFileSync(path, "utf8"));
-
-          const newDate = new Date().toISOString();
-          data.apps[0].version = process.env.version;
-          data.apps[0].downloadURL = "https://github.com/emdy1/Metia_V2/releases/download/v" + process.env.version + "/metia.signed.ipa";
-          data.apps[0].size = parseInt(process.env.size);
-          data.apps[0].versionDate = newDate;
-
-          fs.writeFileSync(path, JSON.stringify(data, null, 2));
-          '
-        env:
-          version: ${{ env.version }}
-          size: ${{ env.size }}
-
-      - name: Commit and Push Changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add SyncingStuff/app.json
-          git commit -m "Updated app.json with new IPA size and version date"
-          git push
