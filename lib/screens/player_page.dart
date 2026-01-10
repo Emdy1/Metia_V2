@@ -358,9 +358,9 @@ class _PlayerPageState extends State<PlayerPage> {
       Media(
         m3u8Link,
         httpHeaders: {
-          "referer": widget.animeStreamingData.link,
-          "user-agents":
+          "User-Agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+          "Referer": widget.animeStreamingData.link,
         },
       ),
       play: true,
