@@ -2,7 +2,7 @@
 
 A new Flutter project.
 
-##📋Todos
+## 📋Todos
  - [x] Real-Time Syncing acroos multiple Devices
  - [ ] Migrate to supabase, for better syncing
 
