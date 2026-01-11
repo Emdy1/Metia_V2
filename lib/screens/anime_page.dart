@@ -959,9 +959,10 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                         ? const Icon(Icons.play_arrow_outlined, size: 20)
                         : const SizedBox(),
                     onPressed: () async {
-                      //TODO: delte this !!
+                      //TODO: delete this !!
                       if (runtime.extensionServices.mainExtension == null ||
-                          runtime.extensionServices.currentExtensions.isEmpty) {
+                          runtime.extensionServices.currentExtensions.isEmpty ||
+                          episodeList.isEmpty) {
                         return;
                       }
                       watchAnime(

@@ -11,7 +11,6 @@ import 'package:metia/models/login_provider.dart';
 import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/home_page.dart';
 import 'package:metia/services/sync_service.dart';
-
 import 'package:provider/provider.dart';
 
 void main() async {
