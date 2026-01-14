@@ -1,7 +1,9 @@
 name: Build and Release
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 env:
   FLUTTER_CHANNEL: 'stable'
@@ -9,6 +11,7 @@ env:
 
 jobs:
   bump-version:
+    if: contains(github.event.head_commit.message, '[release]')
     name: Bump Version
     runs-on: ubuntu-latest
     outputs:
