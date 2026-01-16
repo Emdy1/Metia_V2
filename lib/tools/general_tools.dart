@@ -289,6 +289,7 @@ class Tools {
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
+      Logger.log("Successfully got the server's JWT token of the user");
       return json['token']; // ✅ Server JWT token
     } else {
       Logger.log('Failed to get JWT: ${response.body}');

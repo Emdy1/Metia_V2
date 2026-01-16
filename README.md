@@ -3,8 +3,9 @@
 A new Flutter project.
 
 ## 📋Todos
- - [x] Real-Time Syncing acroos multiple Devices
- - [ ] Migrate to supabase, for better syncing
+ - [x] Real-Time Syncing acroos multiple Devices.
+ - [X] Migrate to supabase, for better syncing.
+ - [ ] A new Re-design of the Player. 
 
 
 ## Getting Started
