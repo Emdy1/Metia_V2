@@ -278,8 +278,11 @@ class Tools {
   }
 
   static Future<String?> getServerJwtToken(String aniListToken) async {
+    final String baseUrl = 'https://metiasync-supabase.vercel.app';
+    // final String baseUrl = 'https://metiasync.onrender.com';
+
     final response = await http.post(
-      Uri.parse('https://metiasync.onrender.com/auth'),
+      Uri.parse('$baseUrl/auth/anilist'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'anilist_auth_key': aniListToken}),
     );

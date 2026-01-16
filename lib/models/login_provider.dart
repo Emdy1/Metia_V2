@@ -8,6 +8,7 @@ import 'package:metia/data/user/user_data.dart';
 import 'package:metia/data/user/user_library.dart';
 import 'package:metia/models/logger.dart';
 import 'package:metia/tools/general_tools.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
@@ -236,9 +237,24 @@ class UserProvider extends ChangeNotifier {
   Future<void> _getUserData() async {
     String authKey = await _getAuthKey();
 
-    Tools.getServerJwtToken(authKey).then((value) {
-      _JWTtoken = value!;
-      _isMetiaSyncReady = true;
+    Tools.getServerJwtToken(authKey).then((jwtToken) async {
+      if (jwtToken != null && jwtToken.isNotEmpty) {
+        try {
+          // Set the JWT for authenticated requests
+          Supabase.instance.client.rest.headers['Authorization'] = 'Bearer $jwtToken';
+
+          _JWTtoken = jwtToken;
+          _isMetiaSyncReady = true;
+          Logger.log('Successfully set Supabase JWT.', level: 'INFO');
+        } catch (e) {
+          Logger.log('Failed to set Supabase JWT: $e', level: 'ERROR');
+          _isMetiaSyncReady = false;
+        }
+      } else {
+        Logger.log('Failed to get JWT token from server.', level: 'ERROR');
+        _isMetiaSyncReady = false;
+      }
+      notifyListeners();
     });
 
     const String url = 'https://graphql.anilist.co';

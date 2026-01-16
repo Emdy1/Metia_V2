@@ -6,10 +6,20 @@ import 'package:metia/models/episode_database.dart';
 class EpisodeDataService extends ChangeNotifier {
   final Isar db;
   late final Stream<List<EpisodeData>> _allEpisodesStream;
+  
+  List<EpisodeData> _currentEpisodeDatas = [];
+  List<EpisodeData> get currentEpisodeDatas => _currentEpisodeDatas;
 
   EpisodeDataService(this.db) {
-    _allEpisodesStream =
-        db.episodeDatas.where().watch(fireImmediately: true);
+    _allEpisodesStream = db.episodeDatas.where().watch(fireImmediately: true);
+    _initializeListener();
+  }
+
+  void _initializeListener() {
+    _allEpisodesStream.listen((episodes) {
+      _currentEpisodeDatas = episodes;
+      notifyListeners();
+    });
   }
 
   Stream<List<EpisodeData>> watchAllEpisodeDatas() {
@@ -22,11 +32,7 @@ class EpisodeDataService extends ChangeNotifier {
     });
   }
 
-  Future<EpisodeData?> getEpisodeDataOf(
-    int anilistMediaId,
-    int extensionId,
-    int index,
-  ) async {
+  Future<EpisodeData?> getEpisodeDataOf(int anilistMediaId, int extensionId, int index) async {
     return await db.episodeDatas
         .where()
         .filter()
@@ -36,11 +42,7 @@ class EpisodeDataService extends ChangeNotifier {
         .findFirst();
   }
 
-  Stream<EpisodeData?> watchEpisodeDataOf(
-    int anilistMediaId,
-    int extensionId,
-    int index,
-  ) {
+  Stream<EpisodeData?> watchEpisodeDataOf(int anilistMediaId, int extensionId, int index) {
     return db.episodeDatas
         .where()
         .filter()
@@ -51,11 +53,7 @@ class EpisodeDataService extends ChangeNotifier {
         .map((results) => results.isNotEmpty ? results.first : null);
   }
 
-  Future<void> updateEpisodeProgress({
-    EpisodeData? episode,
-    int? progress,
-    int? total,
-  }) async {
+  Future<void> updateEpisodeProgress({EpisodeData? episode, int? progress, int? total}) async {
     if (episode == null) return;
 
     await db.writeTxn(() async {
@@ -65,8 +63,20 @@ class EpisodeDataService extends ChangeNotifier {
       if (total != null) {
         episode.total = total;
       }
-      episode.lastModified = DateTime.now(); // Set lastModified
+      episode.lastModified = DateTime.now().toUtc(); // Update lastModified
       await db.episodeDatas.put(episode);
     });
+  }
+
+  Future<void> deleteEpisode(int episodeDataId) async {
+    await db.writeTxn(() async {
+      await db.episodeDatas.delete(episodeDataId);
+    });
+  }
+  
+  @override
+  void dispose() {
+    // The stream subscription will be automatically cleaned up
+    super.dispose();
   }
 }

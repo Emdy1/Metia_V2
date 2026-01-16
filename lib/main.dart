@@ -12,10 +12,16 @@ import 'package:metia/models/theme_provider.dart';
 import 'package:metia/screens/home_page.dart';
 import 'package:metia/services/sync_service.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://gkhlgsuvgjyivypqdkvs.supabase.co',
+    anonKey: 'sb_publishable_GG6NCjtT4K_Di32Lgz1ZLA_Smrz2VYd',
+  );
 
   //never delete this, it should be run only after "WidgetsFlutterBinding.ensureInitialized();"
   await IsarServices.setup();

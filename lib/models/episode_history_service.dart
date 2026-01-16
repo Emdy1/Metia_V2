@@ -20,7 +20,7 @@ class EpisodeHistoryService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addEpisodeHistory(EpisodeHistoryInstance episode) async {
+  Future<void> addEpisodeHistory(EpisodeHistoryInstance episode, {bool fromServer = false}) async {
     if (currentEpisodeHistory.any((e) => e.episode!.url == episode.episode!.url)) {
       EpisodeHistoryInstance existing = currentEpisodeHistory.firstWhere((e) => e.episode!.url == episode.episode!.url);
       await db.writeTxn(() async {
@@ -28,6 +28,9 @@ class EpisodeHistoryService extends ChangeNotifier {
       });
     }
 
+    if (!fromServer) {
+      episode.lastModified = DateTime.now().toUtc(); // Set lastModified
+    }
     await db.writeTxn(() async {
       await db.episodeHistoryInstances.put(episode);
     });
@@ -43,13 +46,13 @@ class EpisodeHistoryService extends ChangeNotifier {
     return currentEpisodeHistory;
   }
 
-  Future<void> updateEpisodeHistory(EpisodeHistoryInstance episode) async {
-    await db.writeTxn(() async {
-      episode.lastModified = DateTime.now(); // Add this line
-      await db.episodeHistoryInstances.put(episode);
-    });
-    await getEpisodeHistories();
-  }
+  // Future<void> updateEpisodeHistory(EpisodeHistoryInstance episode) async {
+  //   await db.writeTxn(() async {
+  //     episode.lastModified = DateTime.now(); // Add this line
+  //     await db.episodeHistoryInstances.put(episode);
+  //   });
+  //   await getEpisodeHistories();
+  // }
 
   Future<void> deleteEpisodeHistory(int id) async {
     await db.writeTxn(() async {

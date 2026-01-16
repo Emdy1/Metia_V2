@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:metia/data/extensions/extension_services.dart';
@@ -19,6 +20,7 @@ import 'package:metia/screens/logging_page.dart';
 import 'package:metia/services/sync_service.dart';
 import 'package:metia/services/update_service.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -328,13 +330,13 @@ void _switchMenuButtons(String value, BuildContext context) {
     case 'sync':
       final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
       if (token != null) {
-        Provider.of<SyncService>(context, listen: false).sync(token);
+        Provider.of<SyncService>(context, listen: false).sync();
       }
+
       break;
     case 'clearHistory':
       () async {
-        String token = Provider.of<UserProvider>(context, listen: false).JWTtoken!;
-        await Provider.of<SyncService>(context, listen: false).deleteAllFromServer(token, "history");
+        await Provider.of<SyncService>(context, listen: false).deleteAll("episode_history");
         await Provider.of<EpisodeHistoryService>(context, listen: false).deleteAllEpisodeHistory();
       }();
       break;

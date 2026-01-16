@@ -310,7 +310,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
     if (mounted) {
       final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
       if (token != null) {
-        Provider.of<SyncService>(context, listen: false).sync(token);
+        Provider.of<SyncService>(context, listen: false).sync();
       }
     }
 
@@ -555,6 +555,7 @@ class _AnimePageState extends State<AnimePage> with TickerProviderStateMixin {
                                           widget.anime.media.id,
                                           runtime.extensionServices.mainExtension!.id,
                                         );
+                                        Provider.of<SyncService>(context, listen: false).sync();
                                         Navigator.of(context).pop();
                                       },
                                       child: Card(

@@ -49,7 +49,7 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
                       Navigator.pop(context);
                       final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
                       if (token != null) {
-                        Provider.of<SyncService>(context, listen: false).sync(token);
+                        Provider.of<SyncService>(context, listen: false).sync();
                       }
                     } else {
                       setState(() {
@@ -97,10 +97,8 @@ class _ExtensionsPageState extends State<ExtensionsPage> {
               onPressed: () async {
                 await extensionServices.deleteExtension(extension.id);
                 String token = Provider.of<UserProvider>(context, listen: false).JWTtoken!;
-                await Provider.of<SyncService>(
-                  context,
-                  listen: false,
-                ).deleteFromServer(token, "extension", extension.id.toString());
+                await Provider.of<SyncService>(context, listen: false).delete("extensions", extension.id.toString());
+
                 Logger.log("WARNING: Deleted \"${extension.name} with id:${extension.id} from the server\"");
                 // 👇 If main was deleted, reassign
                 if (isMain) {

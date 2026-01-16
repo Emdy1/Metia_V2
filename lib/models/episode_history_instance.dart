@@ -93,7 +93,13 @@ class EpisodeHistoryInstance {
       parentList = [];
     }
 
-    lastModified = json['lastModified'] != null ? DateTime.parse(json['lastModified']) : DateTime.now();
+    DateTime? parsedLastModified;
+    if (json['lastModified'] is String) {
+      parsedLastModified = DateTime.parse(json['lastModified']).toUtc();
+    } else if (json['lastModified'] is DateTime) {
+      parsedLastModified = (json['lastModified'] as DateTime).toUtc();
+    }
+    lastModified = parsedLastModified;
 
     return this;
   }

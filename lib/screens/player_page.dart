@@ -223,7 +223,7 @@ class _PlayerPageState extends State<PlayerPage> {
       if (mounted) {
         final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
         if (token != null) {
-          Provider.of<SyncService>(context, listen: false).sync(token);
+          Provider.of<SyncService>(context, listen: false).sync();
         }
       }
     });
@@ -290,7 +290,7 @@ class _PlayerPageState extends State<PlayerPage> {
     if (mounted) {
       final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
       if (token != null) {
-        Provider.of<SyncService>(context, listen: false).sync(token);
+        Provider.of<SyncService>(context, listen: false).sync();
       }
     }
 
@@ -309,7 +309,7 @@ class _PlayerPageState extends State<PlayerPage> {
         ..index = epIndex
         ..progress = 0
         ..total = 0;
-      epData.lastModified = DateTime.now(); // Add this line
+      epData.lastModified = DateTime.now().toUtc(); // Add this line
       await episodeDataService.addEpisodeData(epData);
       // Re-fetch to ensure we have the Isar-managed instance
       epData = await episodeDataService.getEpisodeDataOf(widget.mediaListEntry.media.id, currentExtensionId, epIndex);

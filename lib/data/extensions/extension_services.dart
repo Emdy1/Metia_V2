@@ -16,22 +16,24 @@ class ExtensionServices extends ChangeNotifier {
   final List<Extension> currentExtensions = [];
 
   /// Adds an extension and optionally makes it main if none exists
-  Future<void> addExtension(Extension extension) async {
+  Future<void> addExtension(Extension extension, {bool fromServer = false}) async {
     await db.writeTxn(() async {
-      // If no main extension exists, make this one main
-      final hasMain =
-          await db.extensions.where().filter().isMainEqualTo(true).count() > 0;
-      if (!hasMain) {
+      final hasMain = await db.extensions.where().filter().isMainEqualTo(true).count() > 0;
+
+      if (!hasMain || currentExtensions.isEmpty) {
         extension.isMain = true;
       }
-      if (currentExtensions.isEmpty) {
-        extension.isMain = true;
+
+      if (!fromServer) {
+        // ONLY local user actions update lastModified
+        final timenow = DateTime.now().toUtc();
+        extension.lastModified = timenow;
       }
-      extension.lastModified = DateTime.now(); // Set lastModified
+
       await db.extensions.put(extension);
     });
+
     await getExtensions();
-    
   }
 
   /// Fetch all extensions and update local list
@@ -52,14 +54,13 @@ class ExtensionServices extends ChangeNotifier {
       // Delete the extension
       await db.extensions.delete(id);
 
-
       // If it was the main extension, transfer isMain to the first available extension
       if (extensionToDelete.isMain) {
         final remainingExtensions = await db.extensions.where().findAll();
         if (remainingExtensions.isNotEmpty) {
           final firstExtension = remainingExtensions.first;
           firstExtension.isMain = true;
-          firstExtension.lastModified = DateTime.now(); // Set lastModified
+          firstExtension.lastModified = DateTime.now().toUtc(); // Set lastModified
           await db.extensions.put(firstExtension);
         }
       }
@@ -77,9 +78,7 @@ class ExtensionServices extends ChangeNotifier {
       await Logger.log('Successfully added ${extension.name} to the database');
       return true;
     } catch (e) {
-      await Logger.log(
-        'Something went wrong whilst adding the extension, Error: ${e.toString()}',
-      );
+      await Logger.log('Something went wrong whilst adding the extension, Error: ${e.toString()}');
       return false;
     }
   }
@@ -92,14 +91,14 @@ class ExtensionServices extends ChangeNotifier {
       for (var ext in allExtensions) {
         if (ext.id != extension.id && ext.isMain == true) {
           ext.isMain = false;
-          ext.lastModified = DateTime.now(); // Set lastModified
+          ext.lastModified = DateTime.now().toUtc(); // Set lastModified
           await db.extensions.put(ext);
         }
       }
 
       // Set the chosen extension as main
       extension.isMain = true;
-      extension.lastModified = DateTime.now(); // Set lastModified
+      extension.lastModified = DateTime.now().toUtc(); // Set lastModified
       await db.extensions.put(extension);
     });
 

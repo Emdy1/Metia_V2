@@ -19,9 +19,9 @@ class AnimeDatabaseService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addAnimeDatabases2(AnimeDatabase animedb) async {
+  Future<void> addAnimeDatabases2(AnimeDatabase animeDb) async {
     await db.writeTxn(() async {
-      await db.animeDatabases.put(animedb);
+      await db.animeDatabases.put(animeDb);
     });
     await getAnimeDatabases();
   }
@@ -31,7 +31,7 @@ class AnimeDatabaseService extends ChangeNotifier {
       ..anilistMediaId = anilistMediaId
       ..extensionId = extensionId
       ..matchedAnime = matchedAnime;
-    anime.lastModified = DateTime.now(); // Set lastModified
+    anime.lastModified ??= DateTime.now().toUtc(); // Set lastModified
     await db.writeTxn(() async {
       await db.animeDatabases.put(anime);
     });
@@ -45,7 +45,7 @@ class AnimeDatabaseService extends ChangeNotifier {
       ..extensionId = extensionId
       ..matchedAnime = matchedAnime;
     anime.matchedAnime = matchedAnime;
-    anime.lastModified = DateTime.now(); // Set lastModified
+    anime.lastModified = DateTime.now().toUtc(); // Set lastModified
     await db.writeTxn(() async {
       await db.animeDatabases.put(anime!);
     });
@@ -67,5 +67,11 @@ class AnimeDatabaseService extends ChangeNotifier {
         )
         .isNotEmpty;
     return exists;
+  }
+
+  Future<void> deleteAnime(int animeDbInt) async {
+    await db.writeTxn(() async {
+      await db.animeDatabases.delete(animeDbInt);
+    });
   }
 }
