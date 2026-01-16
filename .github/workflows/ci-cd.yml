@@ -8,6 +8,7 @@ env:
   JAVA_VERSION: '17'
 jobs:
 
+  
   bump-version:
     if: "contains(github.event.head_commit.message, '[release]')"
     name: Bump Version
