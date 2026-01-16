@@ -2,6 +2,11 @@
 
 A new Flutter project.
 
+## 📋Todos
+ - [x] Real-Time Syncing acroos multiple Devices
+ - [ ] Migrate to supabase, for better syncing
+
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
