@@ -7,16 +7,6 @@ env:
   FLUTTER_CHANNEL: 'stable'
   JAVA_VERSION: '17'
 jobs:
-  
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug commit message
-        run: |
-          echo "HEAD COMMIT MESSAGEw:"
-          echo "${{ github.event.head_commit.message }}"
-          echo contains(${{ github.event.head_commit.message }}, '[release]')
-      
 
   bump-version:
     if: "contains(github.event.head_commit.message, '[release]')"
