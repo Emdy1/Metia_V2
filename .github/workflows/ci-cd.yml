@@ -13,8 +13,9 @@ jobs:
     steps:
       - name: Debug commit message
         run: |
-          echo "HEAD COMMIT MESSAGE:"
+          echo "HEAD COMMIT MESSAGEw:"
           echo "${{ github.event.head_commit.message }}"
+          echo contains(${{ github.event.head_commit.message }}, '[release]')
       
 
   bump-version:
