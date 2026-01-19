@@ -21,6 +21,7 @@ void main() async {
   await Supabase.initialize(
     url: 'https://gkhlgsuvgjyivypqdkvs.supabase.co',
     anonKey: 'sb_publishable_GG6NCjtT4K_Di32Lgz1ZLA_Smrz2VYd',
+    authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
   );
 
   //never delete this, it should be run only after "WidgetsFlutterBinding.ensureInitialized();"

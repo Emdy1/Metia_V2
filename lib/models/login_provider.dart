@@ -2,12 +2,25 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart' hide Title;
 import 'package:metia/anilist/anime.dart';
+import 'package:metia/data/extensions/extension.dart';
+import 'package:metia/data/extensions/extension_services.dart';
+import 'package:metia/data/isar_services/isar_services.dart';
 import 'package:metia/data/user/credentials.dart';
 import 'package:metia/data/user/profile.dart';
 import 'package:metia/data/user/user_data.dart';
 import 'package:metia/data/user/user_library.dart';
+import 'package:metia/models/anime_database.dart';
+import 'package:metia/models/anime_database_service.dart';
+import 'package:metia/models/episode_data_service.dart';
+import 'package:metia/models/episode_database.dart';
+import 'package:metia/models/episode_history_instance.dart';
+import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/logger.dart';
+import 'package:metia/screens/extensions_page.dart';
+import 'package:metia/services/sync_service.dart';
 import 'package:metia/tools/general_tools.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 // ignore: depend_on_referenced_packages
@@ -78,6 +91,8 @@ class UserProvider extends ChangeNotifier {
 
   bool isMediaInLibrary(int mediaId) => _libraryMediaIds.contains(mediaId);
 
+  bool alreadySyncedOnce = false;
+
   UserProvider() {
     _initializeLoginState();
 
@@ -109,20 +124,55 @@ class UserProvider extends ChangeNotifier {
   }
 
   void logIn(String authKey) async {
+    Logger.log('INFO: UserProvider: logIn called');
     await UserData.saveAuthKey(authKey);
-    Logger.log('Saved auth key of the user', level: 'INFO');
+    Logger.log('INFO: Saved auth key of the user');
 
     await _getUserData();
-    Logger.log('got user data with the name of ${user.name}', level: 'INFO');
+    Logger.log('INFO: got user data with the name of ${user.name}');
     _isLoggedIn = true;
+    Tools.getServerJwtToken(authKey).then((jwtToken) async {
+      Logger.log('INFO: UserProvider: JWT token received: ${jwtToken != null}');
+      if (jwtToken != null && jwtToken.isNotEmpty) {
+        try {
+          // Set the JWT for authenticated requests
+          Supabase.instance.client.rest.headers['Authorization'] = 'Bearer $jwtToken';
+
+          _JWTtoken = jwtToken;
+          _isMetiaSyncReady = true;
+          Logger.log('INFO: Successfully set Supabase JWT.');
+        } catch (e) {
+          Logger.log('ERROR: Failed to set Supabase JWT: $e');
+          _isMetiaSyncReady = false;
+        }
+      } else {
+        Logger.log('ERROR: Failed to get JWT token from server.');
+        _isMetiaSyncReady = false;
+      }
+      notifyListeners();
+    });
     notifyListeners();
-    Logger.log('Notified the listening build methods to rebuild the app', level: 'INFO');
+    Logger.log('INFO: Notified the listening build methods to rebuild the app');
   }
 
-  void logOut() {
+  void logOut(BuildContext context) async {
     _isLoggedIn = false;
+    _isMetiaSyncReady = false;
+    _JWTtoken = "";
 
     UserData.deletAuthKey();
+
+    await SharedPreferences.getInstance().then((value) {
+      value.setInt('last_sync_time', 0);
+    });
+
+    await Provider.of<EpisodeDataService>(context, listen: false).clear();
+    await Provider.of<EpisodeHistoryService>(context, listen: false).clear();
+    await Provider.of<AnimeDatabaseService>(context, listen: false).clear();
+    await Provider.of<ExtensionServices>(context, listen: false).clear();
+    Provider.of<SyncService>(context, listen: false).stopSyncing();
+    alreadySyncedOnce = false;
+
     notifyListeners();
   }
 
@@ -236,26 +286,6 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> _getUserData() async {
     String authKey = await _getAuthKey();
-
-    Tools.getServerJwtToken(authKey).then((jwtToken) async {
-      if (jwtToken != null && jwtToken.isNotEmpty) {
-        try {
-          // Set the JWT for authenticated requests
-          Supabase.instance.client.rest.headers['Authorization'] = 'Bearer $jwtToken';
-
-          _JWTtoken = jwtToken;
-          _isMetiaSyncReady = true;
-          Logger.log('Successfully set Supabase JWT.', level: 'INFO');
-        } catch (e) {
-          Logger.log('Failed to set Supabase JWT: $e', level: 'ERROR');
-          _isMetiaSyncReady = false;
-        }
-      } else {
-        Logger.log('Failed to get JWT token from server.', level: 'ERROR');
-        _isMetiaSyncReady = false;
-      }
-      notifyListeners();
-    });
 
     const String url = 'https://graphql.anilist.co';
 
@@ -557,8 +587,25 @@ class UserProvider extends ChangeNotifier {
     _isLoggedIn = authKey != "empty";
 
     if (_isLoggedIn) {
-      notifyListeners();
       await _getUserData();
+      final jwtToken = await Tools.getServerJwtToken(authKey);
+      if (jwtToken != null && jwtToken.isNotEmpty) {
+        try {
+          // Set the JWT for authenticated requests
+          Supabase.instance.client.rest.headers['Authorization'] = 'Bearer $jwtToken';
+
+          _JWTtoken = jwtToken;
+          _isMetiaSyncReady = true;
+          Logger.log('Successfully set Supabase JWT.', level: 'INFO');
+        } catch (e) {
+          Logger.log('Failed to set Supabase JWT: $e', level: 'ERROR');
+          _isMetiaSyncReady = false;
+        }
+      } else {
+        Logger.log('Failed to get JWT token from server.', level: 'ERROR');
+        _isMetiaSyncReady = false;
+      }
+      notifyListeners();
     }
 
     notifyListeners();

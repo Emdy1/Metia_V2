@@ -27,13 +27,15 @@ class SyncService extends ChangeNotifier {
   final EpisodeDataService episodeDataService;
 
   Timer? _timer;
-  bool _disposed = false;
+  bool disposed = false;
   SyncStatus _status = SyncStatus.idle;
 
   final List<RealtimeChannel> _channels = [];
   final Set<String> _pendingUploadSignatures = {};
 
   SyncStatus get status => _status;
+
+  bool isSyncing = false;
 
   SyncService({
     required this.extensionServices,
@@ -44,19 +46,29 @@ class SyncService extends ChangeNotifier {
 
   /// -------------------- START --------------------
   Future<void> startSyncing(String supabaseJwt) async {
+    isSyncing = true;
     await _setSupabaseSession(supabaseJwt);
+    sync();
     _setupRealtimeListeners();
     // _timer ??= Timer.periodic(const Duration(seconds: 15), (_) => sync());
     sync();
   }
 
-  @override
-  void dispose() {
-    _disposed = true;
+  void stopSyncing() {
+    isSyncing = false;
     for (final channel in _channels) {
       Supabase.instance.client.removeChannel(channel);
     }
+    _channels.clear();
     _timer?.cancel();
+    _status = SyncStatus.idle;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    stopSyncing();
+    disposed = true;
     super.dispose();
   }
 
@@ -70,6 +82,7 @@ class SyncService extends ChangeNotifier {
   /// Only uploads changes. Downloads are handled by realtime listeners.
   Future<void> sync() async {
     if (_status == SyncStatus.syncing) return;
+    if (disposed) return;
 
     _status = SyncStatus.syncing;
     notifyListeners();
@@ -94,7 +107,7 @@ class SyncService extends ChangeNotifier {
     } finally {
       notifyListeners();
       Future.delayed(const Duration(seconds: 2), () {
-        if (!_disposed) {
+        if (!disposed) {
           _status = SyncStatus.idle;
           notifyListeners();
         }
@@ -215,12 +228,33 @@ class SyncService extends ChangeNotifier {
   /// -------------------- DOWNLOAD --------------------
   Future<Map<String, int>> _downloadAndMerge(DateTime since, DateTime until) async {
     final client = Supabase.instance.client;
+    final uid = client.auth.currentUser!.id;
     final sinceStr = since.toUtc().toIso8601String();
     final untilStr = until.toUtc().toIso8601String();
-    final animes = await client.from('animes').select().gt('updated_at', sinceStr).lt('updated_at', untilStr);
-    final episodes = await client.from('episodes').select().gt('updated_at', sinceStr).lt('updated_at', untilStr);
-    final history = await client.from('episode_history').select().gt('updated_at', sinceStr).lt('updated_at', untilStr);
-    final extensions = await client.from('extensions').select().gt('updated_at', sinceStr).lt('updated_at', untilStr);
+    final animes = await client
+        .from('animes')
+        .select()
+        .eq('user_id', uid)
+        .gt('updated_at', sinceStr)
+        .lt('updated_at', untilStr);
+    final episodes = await client
+        .from('episodes')
+        .select()
+        .eq('user_id', uid)
+        .gt('updated_at', sinceStr)
+        .lt('updated_at', untilStr);
+    final history = await client
+        .from('episode_history')
+        .select()
+        .eq('user_id', uid)
+        .gt('updated_at', sinceStr)
+        .lt('updated_at', untilStr);
+    final extensions = await client
+        .from('extensions')
+        .select()
+        .eq('user_id', uid)
+        .gt('updated_at', sinceStr)
+        .lt('updated_at', untilStr);
     await _mergeServerData({'animes': animes, 'episodes': episodes, 'history': history, 'extensions': extensions});
     return {
       "animes": animes.length,
@@ -260,7 +294,7 @@ class SyncService extends ChangeNotifier {
       final channel = client
           .channel('${table}_changes')
           .onPostgresChanges(
-            event: PostgresChangeEvent.all, // keep all events
+            event: PostgresChangeEvent.all,
             schema: 'public',
             table: table,
             callback: (payload) async {
@@ -273,9 +307,6 @@ class SyncService extends ChangeNotifier {
                 Logger.log('INFO: Ignored realtime echo for $signature');
                 return;
               }
-
-              // locally filter by uid
-              // if (data['user_id'] != uid) return;\n
               switch (payload.eventType) {
                 case PostgresChangeEvent.insert:
                 case PostgresChangeEvent.update:
@@ -289,7 +320,7 @@ class SyncService extends ChangeNotifier {
                   await _handleDelete(table, data);
                   break;
                 default:
-                  break; // this handles PostgresChangeEvent.all
+                  break;
               }
             },
           )
@@ -305,8 +336,6 @@ class SyncService extends ChangeNotifier {
   }
 
   Future<void> deleteAll(String table) async {
-    // final uid = Supabase.instance.client.auth.currentUser!.id;
-    // await Supabase.instance.client.from(table).delete().eq('user_id', uid);
     switch (table) {
       case 'episode_history':
         for (var epHistory in episodeHistoryService.currentEpisodeHistory) {
@@ -336,16 +365,14 @@ class SyncService extends ChangeNotifier {
     switch (table) {
       case 'extensions':
         await extensionServices.addExtension(Extension().fromJson(_convertKeysToCamelCase(data)), fromServer: true);
-        Logger.log("received an Extension");
+
         break;
       case 'animes':
         await animeDatabaseService.addAnimeDatabases2(AnimeDatabase().fromJson(_convertKeysToCamelCase(data)));
-        Logger.log("received an AnimeData");
 
         break;
       case 'episodes':
         await episodeDataService.addEpisodeData(EpisodeData().fromJson(_convertKeysToCamelCase(data)));
-        Logger.log("received an EpisodeData");
 
         break;
       case 'episode_history':
@@ -353,7 +380,6 @@ class SyncService extends ChangeNotifier {
           EpisodeHistoryInstance().fromJson(_convertKeysToCamelCase(data)),
           fromServer: true,
         );
-        Logger.log("received an Episode History");
 
         break;
     }
@@ -364,22 +390,18 @@ class SyncService extends ChangeNotifier {
     switch (table) {
       case 'extensions':
         await extensionServices.deleteExtension(data['id']);
-        Logger.log("deleted an Extension");
 
         break;
       case 'animes':
         await animeDatabaseService.deleteAnime(data['id']);
-        Logger.log("deleted an AniemData");
 
         break;
       case 'episodes':
         await episodeDataService.deleteEpisode(data['id']);
-        Logger.log("deleted an EpisodeData");
 
         break;
       case 'episode_history':
         await episodeHistoryService.deleteEpisodeHistory(data['id']);
-        Logger.log("deleted an Episode History");
 
         break;
     }

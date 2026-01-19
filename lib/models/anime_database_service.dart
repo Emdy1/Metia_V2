@@ -12,6 +12,14 @@ class AnimeDatabaseService extends ChangeNotifier {
 
   final List<AnimeDatabase> currentAnimeDatabase = [];
 
+  Future<void> clear() async {
+    await db.writeTxn(() async {
+      db.animeDatabases.clear();
+    });
+    currentAnimeDatabase.clear();
+    notifyListeners();
+  }
+
   Future<void> getAnimeDatabases() async {
     List<AnimeDatabase> episodeDatas = await db.animeDatabases.where().findAll();
     currentAnimeDatabase.clear();
@@ -73,5 +81,6 @@ class AnimeDatabaseService extends ChangeNotifier {
     await db.writeTxn(() async {
       await db.animeDatabases.delete(animeDbInt);
     });
+    await getAnimeDatabases();
   }
 }

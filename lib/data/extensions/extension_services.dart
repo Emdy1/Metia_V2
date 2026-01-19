@@ -15,6 +15,14 @@ class ExtensionServices extends ChangeNotifier {
 
   final List<Extension> currentExtensions = [];
 
+  Future<void> clear() async {
+    await db.writeTxn(() async {
+      db.extensions.clear();
+    });
+    currentExtensions.clear();
+    notifyListeners();
+  }
+
   /// Adds an extension and optionally makes it main if none exists
   Future<void> addExtension(Extension extension, {bool fromServer = false}) async {
     await db.writeTxn(() async {

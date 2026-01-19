@@ -12,6 +12,14 @@ class EpisodeHistoryService extends ChangeNotifier {
 
   final List<EpisodeHistoryInstance> currentEpisodeHistory = [];
 
+  Future<void> clear() async {
+    await db.writeTxn(() async {
+      db.episodeHistoryInstances.clear();
+    });
+    currentEpisodeHistory.clear();
+    notifyListeners();
+  }
+
   Future<void> getEpisodeHistories() async {
     List<EpisodeHistoryInstance> histories = await db.episodeHistoryInstances.where().findAll();
     histories.sort((a, b) => b.id.compareTo(a.id));

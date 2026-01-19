@@ -33,7 +33,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late TabController _tabController;
   StreamSubscription<Uri>? _linkSubscription;
   int _tabLength = 3;
-  bool alreadySyncedOnce = false;
 
   @override
   void initState() {
@@ -56,13 +55,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _onLoginStateChanged() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    Logger.log(
+      'INFO: HomePage: Login state changed. LoggedIn: ${userProvider.isLoggedIn}, SyncReady: ${userProvider.isMetiaSyncready}, AlreadySynced: ${userProvider.alreadySyncedOnce}',
+    );
     final newLength = userProvider.isLoggedIn ? 4 : 3;
-    if (userProvider.isMetiaSyncready && alreadySyncedOnce == false) {
+    if (userProvider.isMetiaSyncready && userProvider.alreadySyncedOnce == false) {
       final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
-      if (token != null) {
-        Provider.of<SyncService>(context, listen: false).startSyncing(token);
+      Logger.log('INFO: HomePage: Starting sync...');
+
+      if ((token != null && token.isNotEmpty) && Provider.of<SyncService>(context, listen: false).disposed == false) {
+        Provider.of<SyncService>(context, listen: false).startSyncing(token!);
+      } else {
+        Logger.log(
+          'ERROR: HomePage: Sync start failed. Token valid: ${token != null && token.isNotEmpty}, Service active: ${!Provider.of<SyncService>(context, listen: false).disposed}',
+        );
       }
-      alreadySyncedOnce = true;
+      userProvider.alreadySyncedOnce = true;
     }
 
     if (newLength != _tabLength) {
@@ -114,13 +122,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           if (mounted) {
             Provider.of<UserProvider>(context, listen: false).logIn(responseData['access_token'].toString());
           } else {
-            Logger.log('not mounted', level: 'INFO', details: 'Widget not mounted when trying to log in user');
+            Logger.log('INFO: not mounted - Widget not mounted when trying to log in user');
           }
         } else {
-          Logger.log('Failed to retrieve access token: ${response.body}', level: 'ERROR');
+          Logger.log('ERROR: Failed to retrieve access token: ${response.body}');
         }
       } catch (e) {
-        Logger.log('Request failed: $e', level: 'ERROR');
+        Logger.log('ERROR: Request failed: $e');
       }
     });
   }
@@ -213,20 +221,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildTabBarView() {
-    return Selector<UserProvider, bool>(
-      selector: (_, provider) => provider.isLoggedIn,
-      builder: (context, isLoggedIn, _) {
-        return TabBarView(
-          controller: _tabController,
-          physics: const NeverScrollableScrollPhysics(), // Prevent swipe interference
-          children: [
-            if (isLoggedIn) const LibraryPage(),
-            const ExplorerPage(),
-            const HistoryPage(),
-            const ProfilePage(),
-          ],
-        );
-      },
+    // Use _tabLength to ensure the children count matches the controller's length
+    final isLoggedIn = _tabLength == 4;
+    return TabBarView(
+      controller: _tabController,
+      physics: const NeverScrollableScrollPhysics(), // Prevent swipe interference
+      children: [if (isLoggedIn) const LibraryPage(), const ExplorerPage(), const HistoryPage(), const ProfilePage()],
     );
   }
 }
@@ -347,7 +347,7 @@ void _switchMenuButtons(String value, BuildContext context) {
       Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoggingPage()));
       break;
     case 'logout':
-      Provider.of<UserProvider>(context, listen: false).logOut();
+      Provider.of<UserProvider>(context, listen: false).logOut(context);
       break;
     case 'refresh':
       Provider.of<UserProvider>(context, listen: false).reloadUserData();

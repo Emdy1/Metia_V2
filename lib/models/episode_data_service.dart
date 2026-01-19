@@ -6,13 +6,21 @@ import 'package:metia/models/episode_database.dart';
 class EpisodeDataService extends ChangeNotifier {
   final Isar db;
   late final Stream<List<EpisodeData>> _allEpisodesStream;
-  
+
   List<EpisodeData> _currentEpisodeDatas = [];
   List<EpisodeData> get currentEpisodeDatas => _currentEpisodeDatas;
 
   EpisodeDataService(this.db) {
     _allEpisodesStream = db.episodeDatas.where().watch(fireImmediately: true);
     _initializeListener();
+  }
+
+  Future<void> clear() async {
+    await db.writeTxn(() async {
+      db.episodeDatas.clear();
+    });
+    _currentEpisodeDatas.clear();
+    notifyListeners();
   }
 
   void _initializeListener() {
@@ -73,7 +81,7 @@ class EpisodeDataService extends ChangeNotifier {
       await db.episodeDatas.delete(episodeDataId);
     });
   }
-  
+
   @override
   void dispose() {
     // The stream subscription will be automatically cleaned up
