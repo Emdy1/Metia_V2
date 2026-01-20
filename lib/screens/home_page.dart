@@ -5,6 +5,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:metia/data/extensions/extension_services.dart';
 import 'package:metia/models/episode_history_service.dart';
 import 'package:metia/models/logger.dart';
@@ -45,7 +46,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     // Listen to login state changes
     Provider.of<UserProvider>(context, listen: false).addListener(_onLoginStateChanged);
-    initDeepLinks();
 
     // Check for updates after the first frame is rendered
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,43 +94,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _linkSubscription?.cancel();
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> initDeepLinks() async {
-    _linkSubscription = AppLinks().uriLinkStream.listen((uri) async {
-      Logger.log('Received deep link: $uri');
-      final authorizationCode = uri.toString().replaceAll("metia://?code=", "");
-
-      final tokenEndpoint = Uri.https('anilist.co', '/api/v2/oauth/token');
-      final payload = {
-        'grant_type': 'authorization_code',
-        'client_id': '25588',
-        'client_secret': 'QCzgwOKG6kJRzRL91evKRXXGfDCHlmgXfi44A0Ok',
-        'redirect_uri': 'metia://',
-        'code': authorizationCode,
-      };
-
-      try {
-        final response = await http.post(
-          tokenEndpoint,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(payload),
-        );
-
-        if (response.statusCode == 200) {
-          final responseData = jsonDecode(response.body);
-          if (mounted) {
-            Provider.of<UserProvider>(context, listen: false).logIn(responseData['access_token'].toString());
-          } else {
-            Logger.log('INFO: not mounted - Widget not mounted when trying to log in user');
-          }
-        } else {
-          Logger.log('ERROR: Failed to retrieve access token: ${response.body}');
-        }
-      } catch (e) {
-        Logger.log('ERROR: Request failed: $e');
-      }
-    });
   }
 
   @override
@@ -290,6 +253,7 @@ class _SyncIndicator extends StatelessWidget {
 List<PopupMenuEntry<String>> _defaultMenuItemList(context) {
   final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
   return [
+    const PopupMenuItem<String>(value: 'login', height: 36, child: Text('Log In')),
     const PopupMenuItem<String>(enabled: true, height: 36, value: 'logs', child: Text('Logs')),
     const PopupMenuItem<String>(value: 'extensions', height: 36, child: Text('Extensions')),
     const PopupMenuItem<String>(value: 'Settings', height: 36, child: Text('Settings')),
@@ -327,6 +291,9 @@ List<PopupMenuEntry<String>> _loggedMenuItemList(BuildContext context) {
 
 void _switchMenuButtons(String value, BuildContext context) {
   switch (value) {
+    case 'login':
+      Provider.of<UserProvider>(context, listen: false).login();
+      break;
     case 'sync':
       final token = Provider.of<UserProvider>(context, listen: false).JWTtoken;
       if (token != null) {

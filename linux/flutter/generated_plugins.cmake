@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  desktop_webview_window
   flutter_js
   gtk
   isar_flutter_libs
@@ -12,6 +13,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   url_launcher_linux
   volume_controller
   window_manager
+  window_to_front
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

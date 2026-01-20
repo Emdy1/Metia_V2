@@ -34,13 +34,9 @@ class _ProfilePageState extends State<ProfilePage> {
     // TODO: implement initState
     _scrollController = ScrollController()
       ..addListener(() {
-        if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent) {
+        if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent) {
           if (!_hasReachedBottom) {
-            Provider.of<UserProvider>(
-              context,
-              listen: false,
-            ).loadMoreActivities();
+            Provider.of<UserProvider>(context, listen: false).loadMoreActivities();
             _hasReachedBottom = true;
           }
         } else {
@@ -66,13 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Center(
                     child: ElevatedButton(
                       onPressed: () async {
-                        if (!await launchUrl(
-                          Uri.parse(
-                            "https://anilist.co/api/v2/oauth/authorize?client_id=25588&redirect_uri=metia://&response_type=code",
-                          ),
-                        )) {
-                          throw Exception('Could not launch url');
-                        }
+                        Provider.of<UserProvider>(context, listen: false).login();
                       },
                       child: Text("Log In"),
                     ),
@@ -91,10 +81,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ? RefreshIndicator(
             triggerMode: RefreshIndicatorTriggerMode.onEdge,
             onRefresh: () {
-              return Provider.of<UserProvider>(
-                context,
-                listen: false,
-              ).reloadUserData();
+              return Provider.of<UserProvider>(context, listen: false).reloadUserData();
             },
 
             child: _buildProfileBody(hasBanner, user, false),
@@ -109,10 +96,7 @@ class _ProfilePageState extends State<ProfilePage> {
         if (isApple)
           CupertinoSliverRefreshControl(
             onRefresh: () async {
-              await Provider.of<UserProvider>(
-                context,
-                listen: false,
-              ).reloadUserData();
+              await Provider.of<UserProvider>(context, listen: false).reloadUserData();
             },
           ),
         SliverToBoxAdapter(
@@ -123,10 +107,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 height: 125,
                 width: double.infinity,
                 child: hasBanner
-                    ? CachedNetworkImage(
-                        imageUrl: user.bannerImage,
-                        fit: BoxFit.cover,
-                      )
+                    ? CachedNetworkImage(imageUrl: user.bannerImage, fit: BoxFit.cover)
                     : Container(color: Colors.deepPurple),
               ),
 
@@ -138,10 +119,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Theme.of(context).scaffoldBackgroundColor,
-                    ],
+                    colors: [Colors.transparent, Theme.of(context).scaffoldBackgroundColor],
                   ),
                 ),
               ),
@@ -156,18 +134,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: user.avatarLink,
-                        height: 100,
-                      ),
+                      child: CachedNetworkImage(imageUrl: user.avatarLink, height: 100),
                     ),
                     const SizedBox(width: 10),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        user.name,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                      child: Text(user.name, style: Theme.of(context).textTheme.titleMedium),
                     ),
                   ],
                 ),
@@ -184,8 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Center(
                 child: ListView.separated(
                   shrinkWrap: true,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 5),
+                  separatorBuilder: (context, index) => const SizedBox(width: 5),
                   itemCount: user.statistics.stats.length,
                   scrollDirection: Axis.horizontal,
                   itemBuilder: (context, index) {
@@ -218,9 +189,7 @@ class _ProfilePageState extends State<ProfilePage> {
               final activity = user.userActivityPage.activities[index];
               return Column(
                 children: [
-                  if (index != 0 ||
-                      index != user.userActivityPage.activities.length)
-                    const SizedBox(height: 2),
+                  if (index != 0 || index != user.userActivityPage.activities.length) const SizedBox(height: 2),
                   _buildActivityTile(activity),
                 ],
               );
@@ -232,11 +201,7 @@ class _ProfilePageState extends State<ProfilePage> {
             width: double.infinity,
             height: 100,
             child: Center(
-              child: Text(
-                Provider.of<UserProvider>(context).hasNextPage
-                    ? "Loading more..."
-                    : "No more activities.",
-              ),
+              child: Text(Provider.of<UserProvider>(context).hasNextPage ? "Loading more..." : "No more activities."),
             ),
           ),
         ),
@@ -245,9 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildActivityTile(UserActivity activity) {
-    DateTime createdDate = DateTime.fromMillisecondsSinceEpoch(
-      activity.createdAt * 1000,
-    );
+    DateTime createdDate = DateTime.fromMillisecondsSinceEpoch(activity.createdAt * 1000);
     Duration difference = DateTime.now().difference(createdDate);
 
     String time = "";
@@ -270,10 +233,8 @@ class _ProfilePageState extends State<ProfilePage> {
             height: 100,
             width: 75,
             fit: BoxFit.cover,
-            placeholder: (context, url) =>
-                Container(width: 75, height: 100, color: Colors.grey[300]),
-            errorWidget: (context, url, error) =>
-                Container(width: 75, height: 100, color: Colors.grey),
+            placeholder: (context, url) => Container(width: 75, height: 100, color: Colors.grey[300]),
+            errorWidget: (context, url, error) => Container(width: 75, height: 100, color: Colors.grey),
           ),
           const SizedBox(width: 2),
           Expanded(
@@ -286,23 +247,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     activity.media.bannerImage != null
                         ? CachedNetworkImage(
-                          imageUrl: activity.media.bannerImage!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              Container(color: Colors.grey[300]),
-                          errorWidget: (context, url, error) =>
-                              Container(color: Colors.grey),
-                        )
+                            imageUrl: activity.media.bannerImage!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(color: Colors.grey[300]),
+                            errorWidget: (context, url, error) => Container(color: Colors.grey),
+                          )
                         : Container(color: activity.media.color),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent.withAlpha(50),
-                            Colors.black.withAlpha(100),
-                          ],
+                          colors: [Colors.transparent.withAlpha(50), Colors.black.withAlpha(100)],
                         ),
                       ),
                     ),
@@ -328,10 +284,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           Text(
                             time,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.orange,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.orange),
                           ),
                         ],
                       ),

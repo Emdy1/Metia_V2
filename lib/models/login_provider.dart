@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart' hide Title;
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:metia/anilist/anime.dart';
 import 'package:metia/data/extensions/extension.dart';
 import 'package:metia/data/extensions/extension_services.dart';
@@ -111,6 +112,66 @@ class UserProvider extends ChangeNotifier {
     _isSearching = false;
 
     notifyListeners();
+  }
+
+  Future<void> login() async {
+    const clientId = '34813';
+    const clientSecret = 'pEOhQmK6TLXsISFGB0ytkysNndF1pe8gSios79C1';
+    const redirectUri = 'metia2://';
+
+    final authUrl =
+        'https://anilist.co/api/v2/oauth/authorize'
+        '?client_id=$clientId'
+        '&redirect_uri=$redirectUri'
+        '&response_type=code';
+
+    try {
+      final result = await FlutterWebAuth2.authenticate(
+        url: authUrl,
+        callbackUrlScheme: 'metia2',
+        // options: const FlutterWebAuth2Options(useWebview: false),
+      );
+
+      final code = Uri.parse(result).queryParameters['code'];
+      if (code == null) {
+        Logger.log('ERROR: No code returned');
+      }
+      String token = await _exchangeCodeForToken(code!, clientId, clientSecret, redirectUri);
+      logIn(token);
+    } catch (e) {
+      Logger.log('ERROR during login: $e');
+    }
+  }
+
+  Future<String> _exchangeCodeForToken(
+    // BuildContext context,
+    String code,
+    String clientId,
+    String clientSecret,
+    String redirectUri,
+  ) async {
+    final response = await http.post(
+      Uri.parse('https://anilist.co/api/v2/oauth/token'),
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: {
+        'grant_type': 'authorization_code',
+        'client_id': clientId,
+        'client_secret': clientSecret,
+        'redirect_uri': redirectUri,
+        'code': code,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final token = data['access_token'];
+
+      // Provider.of<UserProvider>(context, listen: false).logIn(token);
+      //TODO: this is where we log in with the token !
+      return token;
+    } else {
+      throw Exception('Failed to exchange code for token: ${response.body}');
+    }
   }
 
   void _loadDefaultExplorerContent() async {

@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  desktop_webview_window
   flutter_js
   isar_flutter_libs
   media_kit_libs_windows_video
@@ -12,6 +13,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   url_launcher_windows
   volume_controller
   window_manager
+  window_to_front
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
