@@ -333,7 +333,7 @@ class _PlayerPageState extends State<PlayerPage> {
       // Update Anilist tracking near the end
       if (userProvider.isLoggedIn &&
           player.state.duration.inSeconds > 0 &&
-          position.inSeconds >= player.state.duration.inSeconds - 120) {
+          position.inSeconds >= player.state.duration.inSeconds - 180) {
         if (firstTime) {
           firstTime = false;
           if ((widget.mediaListEntry.progress ?? 0) < epIndex + 1) {
